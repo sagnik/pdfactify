@@ -29,10 +29,16 @@ object FigureExtractorBatchCli extends Logging {
 
   case class CliConfigBatch(
     inputFiles: Seq[File] = Seq(),
-    figureDataPrefix: Option[String] = None, dpi: Int = 150, ignoreErrors: Boolean = false,
-    saveStats: Option[String] = None, saveRegionlessCaptions: Boolean = false,
-    threads: Int = 1, debugLogging: Boolean = true, fullTextPrefix: Option[String] = None,
-    figureImagePrefix: Option[String] = None, figureFormat: String = "png"
+    figureDataPrefix: Option[String] = None,
+    dpi: Int = 150,
+    ignoreErrors: Boolean = false,
+    saveStats: Option[String] = None,
+    saveRegionlessCaptions: Boolean = false,
+    threads: Int = 1,
+    debugLogging: Boolean = true,
+    fullTextPrefix: Option[String] = None,
+    figureImagePrefix: Option[String] = None,
+    figureFormat: String = "png"
   )
 
   val Parser = new scopt.OptionParser[CliConfigBatch]("figure-extractor-batch") {

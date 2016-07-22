@@ -1,8 +1,9 @@
 package org.allenai.pdffigures2
 
 import org.apache.pdfbox.text.TextPosition
-
 import java.text.Normalizer
+
+import spray.json.DefaultJsonProtocol
 
 /** Span of text denoted by the starting and ending line number, inclusive */
 case class TextSpan(start: Int, end: Int) extends Ordered[TextSpan] {
@@ -161,3 +162,5 @@ case class Line(words: List[Word], boundary: Box, lineNumber: Int) {
 case class Word(text: String, boundary: Box, positions: List[TextPosition]) {
   require(positions.nonEmpty, "words must be non-empty")
 }
+
+case class WordwithBB(text: String, boundary: Box)

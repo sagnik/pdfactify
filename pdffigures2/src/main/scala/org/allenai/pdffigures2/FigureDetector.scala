@@ -529,11 +529,17 @@ object FigureDetector {
       }.maxBy(_._1)
 
       val (goodProps, badProps) = bestConfiguration._2.partition(_._2.isDefined)
+
+      import scala.language.implicitConversions
+
+      @inline def rD(d:Double):Double="%.3f".format(d).toDouble
+      @inline def rB(b:Box):Box=Box(rD(b.x1),rD(b.y1),rD(b.x2),rD(b.y2))
+
       val figures = goodProps.map {
         case (proposal, _) =>
           val imageText = page.otherText.flatMap(p => p.lines.flatMap { l =>
             l.words.flatMap {
-              case word => if (proposal.region.contains(word.boundary, 1)) Some(word.text) else None
+              case word => if (proposal.region.contains(word.boundary, 1)) Some(WordwithBB(word.text,rB(word.boundary))) else None
             }
           })
           val caption = proposal.caption

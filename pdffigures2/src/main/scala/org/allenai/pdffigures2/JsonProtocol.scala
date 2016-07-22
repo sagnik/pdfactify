@@ -9,6 +9,7 @@ trait JsonProtocol extends DefaultJsonProtocol {
   // JSON formats so we can write Figures/Captions/Documents to disk
   implicit val boxFormat = jsonFormat4(Box.apply)
   implicit val captionFormat = jsonFormat5(Caption.apply)
+  implicit val wordWithBBFormat = jsonFormat2(WordwithBB.apply)
   implicit val figureFormat = jsonFormat7(Figure.apply)
   implicit val savedFigureFormat = jsonFormat9(SavedFigure.apply)
   implicit val documentTextFormat = jsonFormat3(PdfText.apply)

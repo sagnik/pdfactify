@@ -1,7 +1,9 @@
 package org.allenai.pdffigures2
 
 import java.awt.image.BufferedImage
-import org.allenai.common.{ EnumCompanion, Enum }
+
+import org.allenai.common.{Enum, EnumCompanion}
+import spray.json.DefaultJsonProtocol
 
 sealed abstract class FigureType(id: String) extends Enum[FigureType](id)
 object FigureType extends EnumCompanion[FigureType] {
@@ -30,7 +32,8 @@ object Caption {
 case class Caption(name: String, figType: FigureType, page: Int, text: String, boundary: Box)
 
 case class Figure(name: String, figType: FigureType, page: Int,
-  caption: String, imageText: Seq[String], captionBoundary: Box, regionBoundary: Box)
+  caption: String, imageText: Seq[WordwithBB], captionBoundary: Box, regionBoundary: Box)
+
 
 /** Figure that has been rendered to a buffered image.
   *
@@ -48,11 +51,11 @@ case class RasterizedFigure(figure: Figure, imageRegion: Box,
 object SavedFigure {
   def apply(figure: RasterizedFigure, renderUrl: String): SavedFigure = {
     val fig = figure.figure
-    SavedFigure(fig.name, fig.figType, fig.page, fig.caption, fig.imageText,
+    SavedFigure(fig.name, fig.figType, fig.page, fig.caption, fig.imageText.map(_.text),
       fig.captionBoundary, figure.imageRegion.scale(72.0 / figure.dpi), renderUrl, figure.dpi)
   }
   def apply(figure: Figure, renderUrl: String, renderDpi: Int): SavedFigure = {
-    SavedFigure(figure.name, figure.figType, figure.page, figure.caption, figure.imageText,
+    SavedFigure(figure.name, figure.figType, figure.page, figure.caption, figure.imageText.map(_.text),
       figure.captionBoundary, figure.regionBoundary, renderUrl, renderDpi)
   }
 }

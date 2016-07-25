@@ -13,13 +13,16 @@ object AllenAITableCreator {
     val doc = PDDocument.load(new File(pdLoc))
     val figureExtractor = FigureExtractor()
     val document = figureExtractor.getFiguresWithText(doc)
+
     document.figures.foreach(x => println(s"[pageNo]:${x.page} [figureType]: ${x.figType} " +
-      s"[boundary]: ${x.regionBoundary},[content]: ${x.imageText}" +
-      s"[caption]: ${x.caption}"))
+      s"[boundary]: ${x.regionBoundary} [caption]: ${x.caption}" +
+      s"[content]: ${x.imageText.map(_.text)}" +
+      s"\n------------------------------\n"))
+
   }
 
   def main(args: Array[String]): Unit = {
-    val pdLoc = "/Users/schoudhury/codes/factify/pdftabletorelationaltriple/src/test/resources/pdfs/10.1.1.10.4597.pdf"
+    val pdLoc = "/Users/schoudhury/data/econpapers/ageconsearch.umn.edu/pdfs/1.pdf"
     AllenAITableCreator(pdLoc)
   }
 

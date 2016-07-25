@@ -119,10 +119,12 @@ case class FigureExtractor(
         rebuiltParagraphs
       }
       val captionStarts = CaptionDetector.findCaptions(withSections, documentLayout)
+
       val captionStartsFiltered = pages match {
         case Some(pagesToUse) => captionStarts.filter(c => pagesToUse.contains(c.page))
         case None => captionStarts
       }
+
       val candidatesByPage = captionStartsFiltered.groupBy(_.page)
       val pagesWithFigures = candidatesByPage.map {
         case (pageNum, pageCandidates) =>
@@ -137,6 +139,8 @@ case class FigureExtractor(
             pageCandidates,
             pageWithGraphics, documentLayout.medianLineSpacing
           )
+          //println("$$$$$$$$$\n"+pageWithCaptions.captions.map(x=>(x.text,x.page))+"$$$$$$$$$\n")
+
           if (visualLogger.isDefined) visualLogger.get.logPagesWithCaption(pageWithCaptions)
           val pageWithRegions = RegionClassifier.classifyRegions(pageWithCaptions, documentLayout)
           if (visualLogger.isDefined) visualLogger.get.logRegions(pageWithRegions)
@@ -152,6 +156,7 @@ case class FigureExtractor(
       }.toSeq
       val otherPages =
         withSections.filter(p => pagesWithFigures.forall(_.pageNumber != p.pageNumber))
+
       DocumentContent(Some(documentLayout), pagesWithFigures, otherPages)
     }
   }

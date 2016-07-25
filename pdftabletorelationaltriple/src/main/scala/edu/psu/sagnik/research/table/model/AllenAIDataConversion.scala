@@ -8,6 +8,7 @@ import edu.psu.sagnik.research.pdsimplify.path.impl.BB
 import org.apache.pdfbox.pdmodel.PDDocument
 import edu.psu.sagnik.research.pdsimplify.path.model._
 import edu.psu.sagnik.research.pdsimplify.raster.model.PDRasterImage
+import org.allenai.pdffigures2.{Box, FigureExtractor, FigureType}
 import org.json4s.native.JsonMethods._
 
 /** Created by schoudhury on 8/21/15.
@@ -40,6 +41,25 @@ object AllenAIDataConversion {
   def jsonToString(inpFile: String): String = scala.io.Source.fromFile(inpFile).mkString
 
   def jsonTocaseClasses(jsonStr: String): AllenAITable = parse(jsonStr).extract[AllenAITable] //for test
+
+  def fromPDFFigures2(pdLoc: String): Seq[AllenAITable] = {
+    val doc = PDDocument.load(new File(pdLoc))
+    val figureExtractor = FigureExtractor()
+    val document = figureExtractor.getFiguresWithText(doc)
+    document.figures.filter(_.figType==FigureType.Table).map(t=>
+      AllenAITable(
+        Caption = t.caption,
+        Page = t.page,
+        CaptionBB = t.captionBoundary,
+        ImageBB = t.regionBoundary,
+        ImageText = if (t.imageText.isEmpty) None else Some(t.imageText.map(x=>AllenAIWord(0,x.text,allenAIBoxtoSeq(x.boundary)))), //TODO: rotation
+        Mention = None,
+        DPI = 72,
+        id = t.id
+      )
+    )
+
+  }
 
   def isStraightLine(s: PDSegment) = s match {
     case s: PDLine => (s.startPoint.x isEqualFloat s.endPoint.x) || (s.startPoint.y isEqualFloat s.endPoint.y) //a horizontal or a vertical line
@@ -84,7 +104,7 @@ object AllenAIDataConversion {
       tableBBVals(2),
       tableBBVals(3)
     )
-    //println(s"path BB: ${segmentBB}, table BB: ${tableBB} is inside ${Rectangle.rectInside(segmentBB,tableBB)}")
+    println(s"path BB: ${segmentBB}, table BB: ${tableBB} is inside ${Rectangle.rectInside(segmentBB,tableBB)}")
     Rectangle.rectInside(segmentBB, tableBB)
   }
 
@@ -132,7 +152,7 @@ object AllenAIDataConversion {
 
   def getPDLines(pdLoc: String, bb: Seq[Float], pageNumber: Int) = {
     val pdDoc = PDDocument.load(new File(pdLoc))
-    val simplePage = ProcessDocument(pdDoc).pages(pageNumber - 1)
+    val simplePage = ProcessDocument(pdDoc).pages(pageNumber)
     pdDoc.close()
     //println(s"[straight segments]: ${simplePage.gPaths.flatMap(_.subPaths).flatMap(_.segments).count(isStraightLine(_))}")
 
@@ -157,11 +177,14 @@ object AllenAIDataConversion {
     (simplePage.bb.y2 - simplePage.bb.y1, simplePage.bb.x2 - simplePage.bb.x1)
   }
 
+  @inline def allenAIBoxtoSeq(b:Box,cvRatio:Float=1f):Seq[Float]=
+    Seq(b.x1.toFloat/cvRatio,b.y1.toFloat/cvRatio,b.x2.toFloat/cvRatio,b.y2.toFloat/cvRatio)
+
   def allenAITableToMyTable(atable: AllenAITable, pdLoc: String): Option[IntermediateTable] = atable.ImageText match {
     case Some(wordsOrg) =>
       val cvRatio = atable.DPI / 72f
-      val tableBB = atable.ImageBB.map(_.toFloat / cvRatio.toFloat)
-      val words = wordsOrg.map(x => x.copy(TextBB = x.TextBB.map(_ / cvRatio)))
+      val tableBB= allenAIBoxtoSeq(atable.ImageBB)
+      val words = wordsOrg.map(x => x.copy(TextBB = x.TextBB.map(_/cvRatio)))
       val (pageHeight, pageWidth) = getPageHeightWidth(pdLoc, atable.Page)
       val imTable = IntermediateTable(
         bb = Rectangle(tableBB.head, tableBB(1), tableBB(2), tableBB(3)),
@@ -176,13 +199,14 @@ object AllenAIDataConversion {
             )
           )),
 
-        caption = atable.Caption,
+        caption = Some(atable.Caption),
         mention = atable.Mention,
         pageNo = atable.Page,
         pdLines = getPDLines(pdLoc, tableBB, atable.Page),
         pageHeight = pageHeight,
         pageWidth = pageWidth,
-        dpi = atable.DPI
+        dpi = atable.DPI,
+        id  = atable.id
       )
       //println(imTable.pdLines)
       if (imTable.textSegments.nonEmpty) Some(imTable)

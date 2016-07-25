@@ -2,7 +2,7 @@ package org.allenai.pdffigures2
 
 import java.awt.image.BufferedImage
 
-import org.allenai.common.{Enum, EnumCompanion}
+import org.allenai.common.{ Enum, EnumCompanion }
 import spray.json.DefaultJsonProtocol
 
 sealed abstract class FigureType(id: String) extends Enum[FigureType](id)
@@ -12,7 +12,7 @@ object FigureType extends EnumCompanion[FigureType] {
   register(Figure, Table)
 }
 
-case class CaptionParagraph(name: String, figType: FigureType, page: Int, paragraph: Paragraph) {
+case class CaptionParagraph(name: String, id: String, figType: FigureType, page: Int, paragraph: Paragraph) {
   def boundary: Box = paragraph.boundary
   def startLineNumber: Int = paragraph.startLineNumber
   def text: String = Paragraph.convertToNormalizedString(paragraph)
@@ -31,9 +31,8 @@ object Caption {
 }
 case class Caption(name: String, figType: FigureType, page: Int, text: String, boundary: Box)
 
-case class Figure(name: String, figType: FigureType, page: Int,
+case class Figure(name: String, figType: FigureType, id:String, page: Int,
   caption: String, imageText: Seq[WordwithBB], captionBoundary: Box, regionBoundary: Box)
-
 
 /** Figure that has been rendered to a buffered image.
   *

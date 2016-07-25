@@ -5,16 +5,16 @@ import org.allenai.common.Logging
 import org.apache.pdfbox.pdmodel.font.PDFont
 
 case class CaptionStart(
-    header: String,
-    name: String,
-    figType: FigureType,
-    numberSyntax: String,
-    line: Line,
-    nextLine: Option[Line],
-    page: Int,
-    paragraphStart: Boolean,
-    lineEnd: Boolean
-) {
+                         header: String,
+                         name: String,
+                         figType: FigureType,
+                         numberSyntax: String,
+                         line: Line,
+                         nextLine: Option[Line],
+                         page: Int,
+                         paragraphStart: Boolean,
+                         lineEnd: Boolean
+                       ) {
   val figId = (figType, name)
   val colonMatch = numberSyntax == ":"
   val periodMatch = numberSyntax == "."
@@ -30,6 +30,7 @@ object CaptionDetector extends Logging {
   // the same page, and are unable to prune the duplicates, then give up on those caption prefixes.
   private val MaxDuplicateCaptionNames = 3
   private val MaxSamePageDuplicateCaptionNames = 2
+  private val TOCtoPageRatio=0.1f
 
   // Very rare PDFs have some crazy text issues causing paragraphs to be stuffed into
   // single lines (even Preview can't parse these PDFs), so we do a sanity check
@@ -41,8 +42,7 @@ object CaptionDetector extends Logging {
     * depending on the formatting for that CaptionStart. A filter should accept captions
     * that share some specific formatting characteristic
     */
-  abstract class CandidateFilter {
-    val name: String
+  sealed trait CandidateFilter {
     def accept(cc: CaptionStart): Boolean
   }
 
@@ -52,9 +52,9 @@ object CaptionDetector extends Logging {
   }
 
   private case class NonStandardFont(
-      standardFont: PDFont,
-      types: Set[FigureType]
-  ) extends CandidateFilter {
+                                      standardFont: PDFont,
+                                      types: Set[FigureType]
+                                    ) extends CandidateFilter {
     val name = s"Non Standard Font: ${types.toList}"
     def accept(cc: CaptionStart): Boolean =
       !types.contains(cc.figType) ||
@@ -62,37 +62,37 @@ object CaptionDetector extends Logging {
   }
 
   private case class PeriodOnly() extends CandidateFilter {
-    val name = "Period Only"
+    override def toString = "[PeriodOnly]: Period Only"
     def accept(cc: CaptionStart): Boolean = cc.periodMatch
   }
 
   private case class AllCapsFigOnly() extends CandidateFilter {
-    val name = "All Caps Figures Only"
+    override def toString = "[AllCapsFigOnly]: All Caps Figures Only"
     def accept(cc: CaptionStart): Boolean = cc.allCapsFig || cc.figType == FigureType.Table
   }
 
   private case class AllCapsTableOnly() extends CandidateFilter {
-    val name = "All Caps Table Only"
+    override def toString = "[AllCapsTableOnly]: All Caps Table Only"
     def accept(cc: CaptionStart): Boolean = cc.allCapsTable || cc.figType == FigureType.Figure
   }
 
   private case class AbbreviatedFigOnly() extends CandidateFilter {
-    val name = "Abbreviated Fig Only"
+    override def toString = "[AbbreviatedFigOnly]: Abbreviated Fig Only"
     def accept(cc: CaptionStart): Boolean = cc.figAbbreviated || cc.figType == FigureType.Table
   }
 
   private case class LineEndOnly() extends CandidateFilter {
-    val name = "Line End Only"
+    override def toString = "[LineEndOnly]: Line End Only"
     def accept(cc: CaptionStart): Boolean = cc.lineEnd
   }
 
   private case class FigureHasFollowingTextOnly() extends CandidateFilter {
-    val name = "Figure Following Text"
+    override def toString = "[FigureHasFollowingTextOnly]: Figure Following Text"
     def accept(cc: CaptionStart): Boolean = cc.figType == FigureType.Table || !cc.lineEnd
   }
 
   private case class LeftAlignedOnly(figureOnly: Boolean) extends CandidateFilter {
-    val name = "Left Aligned" + (if (figureOnly) " Figures" else "")
+    override def toString = "[LeftAlignedOnly]: Left Aligned" + (if (figureOnly) " Figures" else "")
     def accept(cc: CaptionStart): Boolean = {
       figureOnly && cc.figType == FigureType.Table || (if (cc.nextLine.isDefined) {
         Math.abs(cc.line.boundary.x1 - cc.nextLine.get.boundary.x1) < 1
@@ -101,6 +101,17 @@ object CaptionDetector extends Logging {
       })
     }
   }
+
+  private case class CaptionStartsWithUpperCase() extends CandidateFilter {
+    override def toString = "[CaptionStartsWithUpperCase]: Caption after Figure Starts with Upper Case Letter"
+    def accept(cc: CaptionStart): Boolean = if (cc.line.words.length > 2) cc.line.words(2).text.charAt(0).isUpper else true
+  }
+
+  private case class CaptionInTOC(totalPages:Int) extends CandidateFilter {
+    override def toString = "[CaptionInTOC]: Caption inside Table of Contents"
+    def accept(cc: CaptionStart): Boolean = if (cc.page < TOCtoPageRatio * totalPages) false else true
+  }
+
 
   // Words that might start captions
   private val captionStartRegex = """^(Figure.|Figure|FIGURE|Table|TABLE||Fig.|Fig|FIG.|FIG)$""".r
@@ -134,10 +145,14 @@ object CaptionDetector extends Logging {
     } else {
       Seq()
     }
+    //TODO: don't understand why the rejection is done in a rather unusual way
     val filters = Seq(ColonOnly(), AllCapsFigOnly(), AllCapsTableOnly()) ++
       fontFilters ++ Seq(AbbreviatedFigOnly(), FigureHasFollowingTextOnly(), PeriodOnly(),
-        LeftAlignedOnly(false), LeftAlignedOnly(true), LineEndOnly())
-    selectCaptionCandidates(candidates, filters)
+      LeftAlignedOnly(false), LeftAlignedOnly(true), LineEndOnly())
+
+    val rejectFilters=List(CaptionInTOC(pages.size),CaptionStartsWithUpperCase())
+
+    selectCaptionCandidates(candidates, rejectFilters)
   }
 
   def findCaptionCandidates(pages: Seq[Page]): Seq[CaptionStart] = {
@@ -204,51 +219,46 @@ object CaptionDetector extends Logging {
   }
 
   def selectCaptionCandidates(
-    candidates: Seq[CaptionStart],
-    filters: Seq[CandidateFilter]
-  ): Seq[CaptionStart] = {
+                               candidates: Seq[CaptionStart],
+                               filters: Seq[CandidateFilter]
+                             ): Seq[CaptionStart] = {
 
     var groupedById = candidates.groupBy(_.figId)
     var removedAny = true
+
+    //groupedById.foreach{case(figId,captions)=>println(figId);println(captions.map(_.line.text));println("$$$$$$$")}
+
+
     // Keep filtering candidates until we have no duplicates for each Figure/Table
     // mentioned in the document, or can't find anything else to prune
-    while (removedAny && groupedById.values.exists(_.size > 1)) {
-      val filterToUse = filters.find { filter =>
-        val filterRemovesAny = groupedById.exists {
-          case (_, candidatesForId) => candidatesForId.exists(!filter.accept(_))
+
+    groupedById= groupedById.map {
+      case (figId, captionCandidate) => {
+        val filterRulesToUse = filters.filter { filterRule =>
+          val filterRemovesAny = captionCandidate.exists(!filterRule.accept(_))
+          val filterRemovesGroup = captionCandidate.forall(!filterRule.accept(_))
+          filterRemovesAny && !filterRemovesGroup
         }
-        val filterRemovesGroup = groupedById.exists {
-          case (_, candidatesForId) => candidatesForId.forall(!filter.accept(_))
-        }
-        filterRemovesAny && !filterRemovesGroup
-      }
-      if (filterToUse.nonEmpty) {
-        groupedById = groupedById.map {
-          case (figId, candidatesForId) => (figId, candidatesForId.filter(filterToUse.get.accept))
-        }
-        logger.debug(s"Applied filter ${filterToUse.get.name}, " +
-          s"${groupedById.values.map(_.size).sum} remaining")
-      } else {
-        // No filters applied, as a last resort try use PDFBox's paragraph deliminations to
-        // disambiguate. This is slightly error-prone due to paragraph chunking errors but better
-        // than nothing. If even that does not work give up
-        removedAny = false
-        groupedById = groupedById.map {
-          case (figureId, candidatesForId) =>
-            val filtered = candidatesForId.filter(_.paragraphStart)
-            if (filtered.nonEmpty) {
-              if (filtered.size < candidatesForId.size) removedAny = true
-              (figureId, filtered)
-            } else {
-              (figureId, candidatesForId)
-            }
-        }
-        if (!removedAny) {
-          logger.debug(s"Filtered for paragraph starts, " +
-            s"${groupedById.values.map(_.size).sum} remaining")
-        }
+        val candidatesForId =
+          if (filterRulesToUse.nonEmpty) {
+            logger.debug(s"Applied filters ${filterRulesToUse}, " +
+              s"for ${figId}")
+            captionCandidate.filterNot(cc=>filterRulesToUse.exists(filterRule=> !filterRule.accept(cc)))
+          } else {
+            // No filters applied, as a last resort try use PDFBox's paragraph deliminations to
+            // disambiguate. This is slightly error-prone due to paragraph chunking errors but better
+            // than nothing. If even that does not work give up
+            removedAny = false
+            val filtered = captionCandidate.filter(_.paragraphStart)
+            if (filtered.nonEmpty) filtered
+            else captionCandidate
+          }
+        (figId,candidatesForId)
       }
     }
+      .filter { case (id, captions) => captions.nonEmpty }
+
+    //groupedById.foreach{case(figId,captions)=>println(figId);println(captions.map(_.line.text));println("#########")}
 
     // Caption groups with 4+ candidates or over 2 candidates on any page are dropped
     val filteredCaptionStarts = groupedById.filter {
@@ -263,4 +273,71 @@ object CaptionDetector extends Logging {
     }
     filteredCaptionStarts.values.flatten.toSeq
   }
+
+  /*  def selectCaptionCandidates(
+      candidates: Seq[CaptionStart],
+      filters: Seq[CandidateFilter]
+    ): Seq[CaptionStart] = {
+
+      var groupedById = candidates.groupBy(_.figId)
+      var removedAny = true
+
+      groupedById = groupedById.map { case (id, captions) => (id, captions.filter(cc => filters.last.accept(cc))) }
+        .filter { case (id, captions) => captions.nonEmpty }
+
+      // Keep filtering candidates until we have no duplicates for each Figure/Table
+      // mentioned in the document, or can't find anything else to prune
+      while (removedAny && groupedById.values.exists(_.size > 1)) {
+        val filterToUse = filters.find { filter =>
+          val filterRemovesAny = groupedById.exists {
+            case (_, candidatesForId) => candidatesForId.exists(!filter.accept(_))
+          }
+          val filterRemovesGroup = groupedById.exists {
+            case (_, candidatesForId) => candidatesForId.forall(!filter.accept(_))
+          }
+          filterRemovesAny && !filterRemovesGroup
+
+        }
+
+        if (filterToUse.nonEmpty) {
+          groupedById = groupedById.map {
+            case (figId, candidatesForId) => (figId, candidatesForId.filter(filterToUse.get.accept))
+          }
+          logger.debug(s"Applied filter ${filterToUse}, " +
+            s"${groupedById.values.map(_.size).sum} remaining")
+        } else {
+          // No filters applied, as a last resort try use PDFBox's paragraph deliminations to
+          // disambiguate. This is slightly error-prone due to paragraph chunking errors but better
+          // than nothing. If even that does not work give up
+          removedAny = false
+          groupedById = groupedById.map {
+            case (figureId, candidatesForId) =>
+              val filtered = candidatesForId.filter(_.paragraphStart)
+              if (filtered.nonEmpty) {
+                if (filtered.size < candidatesForId.size) removedAny = true
+                (figureId, filtered)
+              } else {
+                (figureId, candidatesForId)
+              }
+          }
+          if (!removedAny) {
+            logger.debug(s"Filtered for paragraph starts, " +
+              s"${groupedById.values.map(_.size).sum} remaining")
+          }
+        }
+      }
+
+      // Caption groups with 4+ candidates or over 2 candidates on any page are dropped
+      val filteredCaptionStarts = groupedById.filter {
+        case (figId, captions) =>
+          if (captions.size > MaxDuplicateCaptionNames ||
+            captions.groupBy(_.page).map(_._2.size).max > MaxSamePageDuplicateCaptionNames) {
+            logger.debug(s"Unable to disambiguate caption candidates for $figId, dropping")
+            false
+          } else {
+            true
+          }
+      }
+      filteredCaptionStarts.values.flatten.toSeq
+    }*/
 }

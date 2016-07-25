@@ -198,7 +198,7 @@ object CaptionBuilder extends Logging {
         useLine
     }
 
-    CaptionParagraph(candidate.name, candidate.figType, candidate.page,
+    CaptionParagraph(candidate.name, candidate.figId._2, candidate.figType, candidate.page,
       pruneCaptionParagraph(Paragraph(currentCaption.lines, currentCaption.boundary)))
   }
 }

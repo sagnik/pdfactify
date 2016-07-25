@@ -1,6 +1,7 @@
 package edu.psu.sagnik.research.table.model
 
-import edu.psu.sagnik.research.pdsimplify.path.model.{ PDLine, PDSegment, PathStyle }
+import edu.psu.sagnik.research.pdsimplify.path.model.{PDLine, PDSegment, PathStyle}
+import org.allenai.pdffigures2.{Box, WordwithBB}
 
 /** Created by schoudhury on 8/13/15.
   */
@@ -20,9 +21,15 @@ case class DataCell(startRow: Int, startCol: Int, tg: TextGeneric, rowpath: Seq[
 
 case class AllenAIWord(Rotation: Int, Text: String, TextBB: Seq[Float])
 
-case class AllenAITable(Caption: Option[String], CaptionBB: Option[Seq[Int]], Page: Int,
-  ImageBB: Seq[Int], ImageText: Option[Seq[AllenAIWord]],
-  Mention: Option[String], DPI: Int, Height: Int, Width: Int)
+case class AllenAITable(Caption: String,
+                        CaptionBB: Box,
+                        Page: Int,
+                        ImageBB: Box,
+                        ImageText: Option[Seq[AllenAIWord]],
+                        Mention: Option[String],
+                        DPI: Int,
+                        id: String
+                       )
 
 //we must have bb and text segments. Others can be skipped
 case class IntermediateTable(
@@ -34,7 +41,8 @@ case class IntermediateTable(
   pdLines: Seq[PDSegment],
   pageHeight: Float,
   pageWidth: Float,
-  dpi: Int
+  dpi: Int,
+  id: String
 )
 
 case class Table(

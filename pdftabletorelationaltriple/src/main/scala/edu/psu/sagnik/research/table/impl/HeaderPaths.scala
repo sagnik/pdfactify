@@ -25,12 +25,16 @@ object HeaderPaths {
           val table = CellRenaming.produceRowColNumbers(interimTable)
           TabletoWFT.headerPathstoDataCells(table) match {
             case Some(wft) =>
-              val jsonLoc=jsonDir+jsonBase+"-Table-"+properTable.id+"-wft.json"
-              if (table.cells.length != interimTable.textSegments.length)
-                logger.warning(s"Interim table and Cell Renamed Tables didn't match. " +
-                  s"Created $jsonLoc with high Error Probability. [pdf]: $pdfLoc [table]: ${properTable.id}")
-              else
-                logger.fine(s"Created well formatted table json at $jsonLoc")
+              val jsonLoc=
+                if (table.cells.length != interimTable.textSegments.length) {
+                  logger.warning(s"Interim table and Cell Renamed Tables didn't match. " +
+                    s"Created wft with high Error Probability. [pdf]: $pdfLoc [table]: ${properTable.id}")
+                  jsonDir+jsonBase+"-Table-"+properTable.id+"-wft-err.json"
+                }
+                else {
+                  logger.fine(s"Created wft confidently")
+                  jsonDir+jsonBase+"-Table-"+properTable.id+"-wft.json"
+                }
               scala.tools.nsc.io.File(jsonLoc).writeAll(JSONFormatter.wftToJsonString(wft))
 
             case _ => logger.warning(s"Could not convert given table to a well formed table. [pdf]:$pdfLoc [table]: ${properTable.id}")
@@ -47,11 +51,14 @@ object HeaderPaths {
     val baseDir="/Users/schoudhury/data/econpapers/ageconsearch.umn.edu/"
     val pdfDir=baseDir+"pdfs/"
     val jsonDir=baseDir+"tablejsons/"
-    val pdfBase="1"
+    //val pdfBase="1"
 
-    val pdfLoc=pdfDir+pdfBase+".pdf"
-    HeaderPaths.apply(pdfLoc,jsonDir,pdfBase)
+    val pdfBases=(1 to 4152).map(_.toString)
 
+    for (pdfBase<-pdfBases) {
+      val pdfLoc = pdfDir + pdfBase + ".pdf"
+      HeaderPaths.apply(pdfLoc, jsonDir, pdfBase)
+    }
   }
 
 }

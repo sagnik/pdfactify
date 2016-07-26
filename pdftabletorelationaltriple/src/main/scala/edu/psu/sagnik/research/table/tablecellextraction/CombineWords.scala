@@ -17,12 +17,15 @@ see model.AllenAIDataConversion
 */
 
 // scalastyle:off
-import edu.psu.sagnik.research.pdsimplify.path.model.{ PDLine, PDSegment }
-import edu.psu.sagnik.research.table.model.{ IntermediateTable, Rectangle, TextGeneric }
+import java.util.logging.Logger
+
+import edu.psu.sagnik.research.pdsimplify.path.model.{PDLine, PDSegment}
+import edu.psu.sagnik.research.table.model.{IntermediateTable, Rectangle, TextGeneric}
 
 object CombineWords {
 
-  //this will reduce the pain in writing TextGeneric so many times :)
+  lazy val logger = Logger.getLogger("table.tablecellextraction.CombineWords")
+
   type A = TextGeneric
   def A(x: String, y: Rectangle) = TextGeneric(x, y)
 
@@ -34,7 +37,7 @@ object CombineWords {
   /* this function will be changed with linear chain CRFs to facilitate merging*/
   def horizontalMerge(words: Seq[A], pdLines: Seq[PDSegment], f: Seq[A] => Float): Seq[A] = {
     val threshold = f(words) + 4f //added because we are reducing the original boundaries by 2.
-    println(s"The horizontal distance threshold for merging words is ${threshold}")
+    logger.fine(s"The horizontal distance threshold for merging words is ${threshold}")
     merge(words, Nil, threshold, pdLines)
   }
 

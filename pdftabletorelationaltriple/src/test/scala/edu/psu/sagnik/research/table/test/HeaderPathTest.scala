@@ -1,7 +1,8 @@
 package edu.psu.sagnik.research.table.test
 
+import edu.psu.sagnik.research.table.impl.JSONFormatter
 import edu.psu.sagnik.research.table.model.AllenAIDataConversion
-import edu.psu.sagnik.research.table.tablecellextraction.{ CellRenaming, CombineWords }
+import edu.psu.sagnik.research.table.tablecellextraction.{CellRenaming, CombineWords}
 import edu.psu.sagnik.research.table.tripleextraction.TabletoWFT
 import org.scalatest.FunSpec
 

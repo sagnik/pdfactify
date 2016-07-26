@@ -1,7 +1,6 @@
-package edu.psu.sagnik.research.table.test
+package edu.psu.sagnik.research.table.impl
 
-import edu.psu.sagnik.research.table.model.{ Rectangle, WFT }
-import org.json4s.JsonDSL._
+import edu.psu.sagnik.research.table.model.{Rectangle, WFT}
 import org.json4s.JsonDSL._
 import org.json4s.jackson.JsonMethods._
 

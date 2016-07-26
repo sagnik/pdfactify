@@ -87,7 +87,7 @@ object AllenAIDataConversion {
       tableBBVals(2),
       tableBBVals(3)
     )
-    println(s"raster BB: ${im.bb}, table BB: ${tableBB} is inside ${Rectangle.rectInside(rasterBB, tableBB)}")
+    //println(s"raster BB: ${im.bb}, table BB: ${tableBB} is inside ${Rectangle.rectInside(rasterBB, tableBB)}")
     Rectangle.rectInside(rasterBB, tableBB)
   }
 
@@ -104,7 +104,7 @@ object AllenAIDataConversion {
       tableBBVals(2),
       tableBBVals(3)
     )
-    println(s"path BB: ${segmentBB}, table BB: ${tableBB} is inside ${Rectangle.rectInside(segmentBB,tableBB)}")
+    //println(s"path BB: ${segmentBB}, table BB: ${tableBB} is inside ${Rectangle.rectInside(segmentBB,tableBB)}")
     Rectangle.rectInside(segmentBB, tableBB)
   }
 

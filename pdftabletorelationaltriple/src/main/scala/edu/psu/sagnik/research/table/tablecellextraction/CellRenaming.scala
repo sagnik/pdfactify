@@ -4,19 +4,24 @@ package edu.psu.sagnik.research.table.tablecellextraction
   */
 
 // scalastyle:off
+import java.util.logging.Logger
+
 import edu.psu.sagnik.research.table.model._
 /*We assume that the intermediate table has text blocks (TextGeneric) that are equivalent to cells. We are going to take these
 and put a row number and column number making them "cells"*/
 object CellRenaming {
+
+  lazy val logger = Logger.getLogger("table.tablecellextraction.CellRenaming")
+
   def produceRowColNumbers(itable: IntermediateTable): Table = {
 
     val debug = false
-    //println(itable.textSegments.length)
+    //logger.fine(itable.textSegments.length)
     val candidatecells = itable.textSegments.filterNot(x =>
       hitsRightExists(x, itable.textSegments) ||
         hitsDownExists(x, itable.textSegments))
 
-    if (debug) { println(s"candidates ${candidatecells}") }
+    if (debug) { logger.fine(s"candidates ${candidatecells}") }
 
     val lowerbottomcell = {
       if (candidatecells.isEmpty) itable.textSegments(0)
@@ -25,7 +30,7 @@ object CellRenaming {
       else candidatecells.sortWith(_.bb.x2 > _.bb.x2)(0)
     }
 
-    if (debug) { println(s"lower bottom cell: ${lowerbottomcell.content}") }
+    if (debug) { logger.fine(s"lower bottom cell: ${lowerbottomcell.content}") }
 
     val tablecells = roWColRecursive(List(UnClassifiedCell(0, 0, lowerbottomcell)), List(UnClassifiedCell(0, 0, lowerbottomcell)), itable.textSegments)
 
@@ -77,11 +82,11 @@ repeat the process for cu as well.
       case c :: cs => {
         val c1 = returnHitCell(hitsLeft(c, allwords), accum, c, hitsLeft = true)
         val c2 = returnHitCell(hitsUp(c, allwords), accum, c, hitsLeft = false)
-        if (debug) println(s"trying cell ${c.startRow},${c.startCol},${c.tg.content}")
+        if (debug) logger.fine(s"trying cell ${c.startRow},${c.startCol},${c.tg.content}")
         (c1, c2) match {
           case (Some(cl), Some(cu)) => {
             if (debug) {
-              println(s"adding both ${cl.startRow},${cl.startCol},${cl.tg.content} &" +
+              logger.fine(s"adding both ${cl.startRow},${cl.startCol},${cl.tg.content} &" +
                 s"${cu.startRow},${cu.startCol},${cu.tg.content}")
             }
             roWColRecursive(
@@ -91,7 +96,7 @@ repeat the process for cu as well.
             )
           }
           case (None, Some(cu)) => {
-            if (debug) { println(s"adding up hit ${cu.startRow},${cu.startCol},${cu.tg.content}") }
+            if (debug) { logger.fine(s"adding up hit ${cu.startRow},${cu.startCol},${cu.tg.content}") }
             roWColRecursive(
               cs.filterNot(x => x.tg.bb == cu.tg.bb) :+ cu,
               accum.filterNot(x => x.tg.bb == cu.tg.bb) :+ cu,
@@ -99,7 +104,7 @@ repeat the process for cu as well.
             )
           }
           case (Some(cl), None) => {
-            if (debug) { println(s"adding left hit ${cl.startRow},${cl.startCol},${cl.tg.content}") }
+            if (debug) { logger.fine(s"adding left hit ${cl.startRow},${cl.startCol},${cl.tg.content}") }
             roWColRecursive(
               cs.filterNot(x => x.tg.bb == cl.tg.bb) :+ cl,
               accum.filterNot(x => x.tg.bb == cl.tg.bb) :+ cl,
@@ -107,7 +112,7 @@ repeat the process for cu as well.
             )
           }
           case (None, None) => {
-            if (debug) { println(s"adding none") }
+            if (debug) { logger.fine(s"adding none") }
             roWColRecursive(
               cs,
               accum,
@@ -185,15 +190,6 @@ repeat the process for cu as well.
   }
   def hitsDownExists(c: TextGeneric, l: Seq[TextGeneric]): Boolean = {
     val extrect = c.bb.copy(y2 = c.bb.y2 + 500)
-    /*
-    if (Rectangle(271.753f,59.76001f,293.547f,75.95001f).equals(c.bb)) {
-      println(l.length)
-      println(extrect);
-      println(l.exists(a=>a.bb.equals(Rectangle(271.753f,74.150024f,293.547f,90.339966f))))
-      println(l.filter(x => x.bb != c.bb && Rectangle.rectInterSects(x.bb, extrect))
-        .filter(x => c.bb.y2 < x.bb.y1))
-    }
-    */
     l.filter(x => x.bb != c.bb && Rectangle.rectInterSects(x.bb, extrect))
       .filter(x => c.bb.y2 < x.bb.y1).nonEmpty
 

@@ -8,7 +8,7 @@ import edu.psu.sagnik.research.pdsimplify.path.impl.BB
 import org.apache.pdfbox.pdmodel.PDDocument
 import edu.psu.sagnik.research.pdsimplify.path.model._
 import edu.psu.sagnik.research.pdsimplify.raster.model.PDRasterImage
-import org.allenai.pdffigures2.{Box, FigureExtractor, FigureType}
+import org.allenai.pdffigures2.{ Box, FigureExtractor, FigureType }
 import org.json4s.native.JsonMethods._
 
 /** Created by schoudhury on 8/21/15.
@@ -46,18 +46,17 @@ object AllenAIDataConversion {
     val doc = PDDocument.load(new File(pdLoc))
     val figureExtractor = FigureExtractor()
     val document = figureExtractor.getFiguresWithText(doc)
-    document.figures.filter(_.figType==FigureType.Table).map(t=>
+    document.figures.filter(_.figType == FigureType.Table).map(t =>
       AllenAITable(
         Caption = t.caption,
         Page = t.page,
         CaptionBB = t.captionBoundary,
         ImageBB = t.regionBoundary,
-        ImageText = if (t.imageText.isEmpty) None else Some(t.imageText.map(x=>AllenAIWord(0,x.text,allenAIBoxtoSeq(x.boundary)))), //TODO: rotation
+        ImageText = if (t.imageText.isEmpty) None else Some(t.imageText.map(x => AllenAIWord(0, x.text, allenAIBoxtoSeq(x.boundary)))), //TODO: rotation
         Mention = None,
         DPI = 72,
         id = t.id
-      )
-    )
+      ))
 
   }
 
@@ -177,14 +176,14 @@ object AllenAIDataConversion {
     (simplePage.bb.y2 - simplePage.bb.y1, simplePage.bb.x2 - simplePage.bb.x1)
   }
 
-  @inline def allenAIBoxtoSeq(b:Box,cvRatio:Float=1f):Seq[Float]=
-    Seq(b.x1.toFloat/cvRatio,b.y1.toFloat/cvRatio,b.x2.toFloat/cvRatio,b.y2.toFloat/cvRatio)
+  @inline def allenAIBoxtoSeq(b: Box, cvRatio: Float = 1f): Seq[Float] =
+    Seq(b.x1.toFloat / cvRatio, b.y1.toFloat / cvRatio, b.x2.toFloat / cvRatio, b.y2.toFloat / cvRatio)
 
   def allenAITableToMyTable(atable: AllenAITable, pdLoc: String): Option[IntermediateTable] = atable.ImageText match {
     case Some(wordsOrg) =>
       val cvRatio = atable.DPI / 72f
-      val tableBB= allenAIBoxtoSeq(atable.ImageBB)
-      val words = wordsOrg.map(x => x.copy(TextBB = x.TextBB.map(_/cvRatio)))
+      val tableBB = allenAIBoxtoSeq(atable.ImageBB)
+      val words = wordsOrg.map(x => x.copy(TextBB = x.TextBB.map(_ / cvRatio)))
       val (pageHeight, pageWidth) = getPageHeightWidth(pdLoc, atable.Page)
       val imTable = IntermediateTable(
         bb = Rectangle(tableBB.head, tableBB(1), tableBB(2), tableBB(3)),
@@ -206,7 +205,7 @@ object AllenAIDataConversion {
         pageHeight = pageHeight,
         pageWidth = pageWidth,
         dpi = atable.DPI,
-        id  = atable.id
+        id = atable.id
       )
       //println(imTable.pdLines)
       if (imTable.textSegments.nonEmpty) Some(imTable)

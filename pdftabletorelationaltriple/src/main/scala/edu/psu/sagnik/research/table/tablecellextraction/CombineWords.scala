@@ -19,12 +19,11 @@ see model.AllenAIDataConversion
 // scalastyle:off
 import java.util.logging.Logger
 
-import edu.psu.sagnik.research.pdsimplify.path.model.{PDLine, PDSegment}
-import edu.psu.sagnik.research.table.model.{IntermediateTable, Rectangle, TextGeneric}
+import edu.psu.sagnik.research.pdsimplify.path.model.{ PDLine, PDSegment }
+import edu.psu.sagnik.research.table.model.{ IntermediateTable, Rectangle, TextGeneric }
+import org.allenai.common.Logging
 
-object CombineWords {
-
-  lazy val logger = Logger.getLogger("table.tablecellextraction.CombineWords")
+object CombineWords extends Logging {
 
   type A = TextGeneric
   def A(x: String, y: Rectangle) = TextGeneric(x, y)
@@ -37,7 +36,7 @@ object CombineWords {
   /* this function will be changed with linear chain CRFs to facilitate merging*/
   def horizontalMerge(words: Seq[A], pdLines: Seq[PDSegment], f: Seq[A] => Float): Seq[A] = {
     val threshold = f(words) + 4f //added because we are reducing the original boundaries by 2.
-    logger.fine(s"The horizontal distance threshold for merging words is ${threshold}")
+    logger.debug(s"The horizontal distance threshold for merging words is $threshold")
     merge(words, Nil, threshold, pdLines)
   }
 
@@ -53,7 +52,7 @@ object CombineWords {
   implicit def max(x: Float, y: Float) = if (x > y) x else y
 
   def lineIntersects(x: A, y: A, pdLines: Seq[PDSegment]) = {
-    if (pdLines.isEmpty) false;
+    if (pdLines.isEmpty) false
     else pdLines.exists(line => Rectangle.rectInterSects(
       Rectangle(
         line.bb.x1,
@@ -101,16 +100,16 @@ object CombineWords {
   def merge(l: Seq[A], accum: Seq[A], threshold: Float, pdLines: Seq[PDSegment]): Seq[A] = {
     l match {
 
-      case x :: ys => {
+      case x :: ys =>
         val toBeMerged = getMergingElement(x, l, threshold, pdLines)
         toBeMerged match {
           case Some((merged, toBeRemoved)) =>
             merge(ys.filterNot(word => word == toBeRemoved) :+ merged, accum, threshold, pdLines)
-          case None => {
-            merge(ys, (accum :+ x), threshold, pdLines)
-          }
+          case None =>
+            merge(ys, accum :+ x, threshold, pdLines)
+
         }
-      }
+
       case Nil => accum
     }
   }

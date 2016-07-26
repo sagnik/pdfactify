@@ -1,6 +1,6 @@
 package edu.psu.sagnik.research.table.test
 
-import edu.psu.sagnik.research.pdsimplify.path.model.{PDCurve, PDLine, PDSegment}
+import edu.psu.sagnik.research.pdsimplify.path.model.{ PDCurve, PDLine, PDSegment }
 import edu.psu.sagnik.research.pdsimplify.text.model.PDChar
 import edu.psu.sagnik.research.table.model.AllenAIDataConversion
 import org.scalatest.FunSpec
@@ -76,7 +76,7 @@ class TableSVGfromPDFTest extends FunSpec {
 
             val svgEnd = "\n</svg>"
 
-            val svgLoc=DataLocation.baseSVGDir+DataLocation.baseFile+"-Table-"+properTable.id+".svg"
+            val svgLoc = DataLocation.baseSVGDir + DataLocation.baseFile + "-Table-" + properTable.id + ".svg"
             File(svgLoc).writeAll(svgStart + content + svgEnd)
             println(s"written svg file at ${svgLoc} [caption]: ${properTable.caption} [words]: ${properTable.textSegments.map(_.content)} [bb]: ${properTable.bb}")
 

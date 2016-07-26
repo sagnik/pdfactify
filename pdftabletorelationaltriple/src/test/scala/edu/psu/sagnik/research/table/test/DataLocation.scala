@@ -10,7 +10,7 @@ object DataLocation {
   //val jsonLoc = "src/test/resources/jsons/10.1.1.106.5870-Table-4.json"
   //val jsonLoc = "src/test/resources/jsons/10.1.1.159.3090-Table-7.json"
   //val jsonLoc = "src/test/resources/jsons/N10-1104-Table-1.json"
-  val baseFile = "1"//"W11-2916" //"N10-1104"
+  val baseFile = "1" //"W11-2916" //"N10-1104"
   val tableBase = "-Table-"
   val tableID = tableBase + "5"
   val basePDir = "/Users/schoudhury/data/econpapers/ageconsearch.umn.edu/pdfs/" //"src/test/resources/pdfs/"

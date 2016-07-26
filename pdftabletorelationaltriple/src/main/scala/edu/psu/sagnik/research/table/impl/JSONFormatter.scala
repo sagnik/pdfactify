@@ -1,6 +1,6 @@
 package edu.psu.sagnik.research.table.impl
 
-import edu.psu.sagnik.research.table.model.{Rectangle, WFT}
+import edu.psu.sagnik.research.table.model.{ Rectangle, WFT }
 import org.json4s.JsonDSL._
 import org.json4s.jackson.JsonMethods._
 
@@ -8,7 +8,7 @@ import org.json4s.jackson.JsonMethods._
   */
 object JSONFormatter {
 
-  def precReduce(d: Float): Double = BigDecimal(d).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble
+  def precReduce(d: Float): Double = BigDecimal.decimal(d).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble
 
   def precReduce(r: Rectangle): List[Double] = List(precReduce(r.x1), precReduce(r.y1), precReduce(r.x2), precReduce(r.x1))
 

@@ -14,10 +14,6 @@ libraryDependencies ++= Seq(
   //jackson for json
   "org.json4s" %% "json4s-native" % "3.2.11",
   "org.json4s" %% "json4s-jackson" % "3.2.10",
-  //breeze for algebra
-  //"org.scalanlp" %% "breeze" % "0.11.2",
-  //"org.scalanlp" %% "breeze-natives" % "0.11.2",
-  //"org.scalanlp" %% "breeze-viz" % "0.11.2",
   //for test
   "org.scalatest"  % "scalatest_2.11"             % "2.2.1"   % "test" withSources() withJavadoc(),
   "org.scalacheck" %% "scalacheck"                % "1.12.1"  % "test" withSources() withJavadoc()

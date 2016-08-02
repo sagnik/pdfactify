@@ -31,7 +31,7 @@ object Caption {
 }
 case class Caption(name: String, figType: FigureType, page: Int, text: String, boundary: Box)
 
-case class Figure(name: String, figType: FigureType, id:String, page: Int,
+case class Figure(name: String, figType: FigureType, id: String, page: Int,
   caption: String, imageText: Seq[WordwithBB], captionBoundary: Box, regionBoundary: Box)
 
 /** Figure that has been rendered to a buffered image.

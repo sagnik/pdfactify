@@ -5,16 +5,16 @@ import org.allenai.common.Logging
 import org.apache.pdfbox.pdmodel.font.PDFont
 
 case class CaptionStart(
-                         header: String,
-                         name: String,
-                         figType: FigureType,
-                         numberSyntax: String,
-                         line: Line,
-                         nextLine: Option[Line],
-                         page: Int,
-                         paragraphStart: Boolean,
-                         lineEnd: Boolean
-                       ) {
+    header: String,
+    name: String,
+    figType: FigureType,
+    numberSyntax: String,
+    line: Line,
+    nextLine: Option[Line],
+    page: Int,
+    paragraphStart: Boolean,
+    lineEnd: Boolean
+) {
   val figId = (figType, name)
   val colonMatch = numberSyntax == ":"
   val periodMatch = numberSyntax == "."
@@ -30,7 +30,7 @@ object CaptionDetector extends Logging {
   // the same page, and are unable to prune the duplicates, then give up on those caption prefixes.
   private val MaxDuplicateCaptionNames = 3
   private val MaxSamePageDuplicateCaptionNames = 2
-  private val TOCtoPageRatio=0.1f
+  private val TOCtoPageRatio = 0.1f
 
   // Very rare PDFs have some crazy text issues causing paragraphs to be stuffed into
   // single lines (even Preview can't parse these PDFs), so we do a sanity check
@@ -52,9 +52,9 @@ object CaptionDetector extends Logging {
   }
 
   private case class NonStandardFont(
-                                      standardFont: PDFont,
-                                      types: Set[FigureType]
-                                    ) extends CandidateFilter {
+      standardFont: PDFont,
+      types: Set[FigureType]
+  ) extends CandidateFilter {
     val name = s"Non Standard Font: ${types.toList}"
     def accept(cc: CaptionStart): Boolean =
       !types.contains(cc.figType) ||
@@ -107,11 +107,10 @@ object CaptionDetector extends Logging {
     def accept(cc: CaptionStart): Boolean = if (cc.line.words.length > 2) cc.line.words(2).text.charAt(0).isUpper else true
   }
 
-  private case class CaptionInTOC(totalPages:Int) extends CandidateFilter {
+  private case class CaptionInTOC(totalPages: Int) extends CandidateFilter {
     override def toString = "[CaptionInTOC]: Caption inside Table of Contents"
     def accept(cc: CaptionStart): Boolean = if (cc.page < TOCtoPageRatio * totalPages) false else true
   }
-
 
   // Words that might start captions
   private val captionStartRegex = """^(Figure.|Figure|FIGURE|Table|TABLE||Fig.|Fig|FIG.|FIG)$""".r
@@ -148,9 +147,9 @@ object CaptionDetector extends Logging {
     //TODO: don't understand why the rejection is done in a rather unusual way
     val filters = Seq(ColonOnly(), AllCapsFigOnly(), AllCapsTableOnly()) ++
       fontFilters ++ Seq(AbbreviatedFigOnly(), FigureHasFollowingTextOnly(), PeriodOnly(),
-      LeftAlignedOnly(false), LeftAlignedOnly(true), LineEndOnly())
+        LeftAlignedOnly(false), LeftAlignedOnly(true), LineEndOnly())
 
-    val rejectFilters=List(CaptionInTOC(pages.size),CaptionStartsWithUpperCase())
+    val rejectFilters = List(CaptionInTOC(pages.size), CaptionStartsWithUpperCase())
 
     selectCaptionCandidates(candidates, rejectFilters)
   }
@@ -219,20 +218,19 @@ object CaptionDetector extends Logging {
   }
 
   def selectCaptionCandidates(
-                               candidates: Seq[CaptionStart],
-                               filters: Seq[CandidateFilter]
-                             ): Seq[CaptionStart] = {
+    candidates: Seq[CaptionStart],
+    filters: Seq[CandidateFilter]
+  ): Seq[CaptionStart] = {
 
     var groupedById = candidates.groupBy(_.figId)
     var removedAny = true
 
     //groupedById.foreach{case(figId,captions)=>println(figId);println(captions.map(_.line.text));println("$$$$$$$")}
 
-
     // Keep filtering candidates until we have no duplicates for each Figure/Table
     // mentioned in the document, or can't find anything else to prune
 
-    groupedById= groupedById.map {
+    groupedById = groupedById.map {
       case (figId, captionCandidate) => {
         val filterRulesToUse = filters.filter { filterRule =>
           val filterRemovesAny = captionCandidate.exists(!filterRule.accept(_))
@@ -243,7 +241,7 @@ object CaptionDetector extends Logging {
           if (filterRulesToUse.nonEmpty) {
             logger.debug(s"Applied filters ${filterRulesToUse}, " +
               s"for ${figId}")
-            captionCandidate.filterNot(cc=>filterRulesToUse.exists(filterRule=> !filterRule.accept(cc)))
+            captionCandidate.filterNot(cc => filterRulesToUse.exists(filterRule => !filterRule.accept(cc)))
           } else {
             // No filters applied, as a last resort try use PDFBox's paragraph deliminations to
             // disambiguate. This is slightly error-prone due to paragraph chunking errors but better
@@ -253,7 +251,7 @@ object CaptionDetector extends Logging {
             if (filtered.nonEmpty) filtered
             else captionCandidate
           }
-        (figId,candidatesForId)
+        (figId, candidatesForId)
       }
     }
       .filter { case (id, captions) => captions.nonEmpty }

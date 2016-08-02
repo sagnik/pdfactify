@@ -4,12 +4,16 @@ import java.awt.geom.Point2D
 import java.io.File
 
 import edu.psu.sagnik.research.pdsimplify.impl.ProcessDocument
+import edu.psu.sagnik.research.pdsimplify.model.PDPageSimple
 import edu.psu.sagnik.research.pdsimplify.path.impl.BB
 import org.apache.pdfbox.pdmodel.PDDocument
 import edu.psu.sagnik.research.pdsimplify.path.model._
 import edu.psu.sagnik.research.pdsimplify.raster.model.PDRasterImage
+import org.allenai.common.Logging
 import org.allenai.pdffigures2.{ Box, FigureExtractor, FigureType }
 import org.json4s.native.JsonMethods._
+
+import scala.util.{ Failure, Success, Try }
 
 /** Created by schoudhury on 8/21/15.
   */
@@ -22,7 +26,7 @@ or produce a JSON file with the case class schema given in com.nitro.research.mo
 */
 
 // scalastyle:off
-object AllenAIDataConversion {
+object AllenAIDataConversion extends Logging {
 
   protected implicit class FloatEquality(val a: Float) extends AnyVal {
     @inline def isEqualFloat(b: Float): Boolean =
@@ -149,31 +153,29 @@ object AllenAIDataConversion {
     pDLinefromPoints(sP = new Point2D.Float(im.bb.x2, im.bb.y1), eP = new Point2D.Float(im.bb.x1, im.bb.y1), bb = bb, pageHeight = pageHeight)
   )
 
-  def getPDLines(pdLoc: String, bb: Seq[Float], pageNumber: Int) = {
-    val pdDoc = PDDocument.load(new File(pdLoc))
-    val simplePage = ProcessDocument(pdDoc).pages(pageNumber)
-    pdDoc.close()
+  def getPDLines(smp: Option[PDPageSimple], bb: Seq[Float], pageNumber: Int) = smp match {
+
     //println(s"[straight segments]: ${simplePage.gPaths.flatMap(_.subPaths).flatMap(_.segments).count(isStraightLine(_))}")
-
-    val (pageHeight, pageWidth) = (simplePage.bb.y2 - simplePage.bb.y1, simplePage.bb.x2 - simplePage.bb.x1)
-
-    (for {
-      paths <- simplePage.gPaths
-      subPaths <- paths.subPaths
-      segments <- subPaths.segments
-      if isStraightLine(segments) && isWithinTable(segments, bb, pageHeight)
-    } yield transformPDSegment(segments, bb, pageHeight)) ++ (for {
-      raster <- simplePage.rasters
-      if isStraightLine(raster) && isWithinTable(raster, bb, pageHeight)
-    } yield transformPDSegment(raster, bb, pageHeight)).flatten
+    case Some(simplePage) =>
+      val (pageHeight, pageWidth) = (simplePage.bb.y2 - simplePage.bb.y1, simplePage.bb.x2 - simplePage.bb.x1)
+      val pdSegments =
+        (for {
+          paths <- simplePage.gPaths
+          subPaths <- paths.subPaths
+          segments <- subPaths.segments
+          if isStraightLine(segments) && isWithinTable(segments, bb, pageHeight)
+        } yield transformPDSegment(segments, bb, pageHeight)) ++ (for {
+          raster <- simplePage.rasters
+          if isStraightLine(raster) && isWithinTable(raster, bb, pageHeight)
+        } yield transformPDSegment(raster, bb, pageHeight)).flatten
+      Some(pdSegments)
+    case _ => None
 
   }
 
-  def getPageHeightWidth(pdLoc: String, pageNumber: Int) = {
-    val pdDoc = PDDocument.load(new File(pdLoc))
-    val simplePage = ProcessDocument(pdDoc).pages(pageNumber - 1)
-    pdDoc.close()
-    (simplePage.bb.y2 - simplePage.bb.y1, simplePage.bb.x2 - simplePage.bb.x1)
+  def getPageHeightWidth(smp: Option[PDPageSimple], pageNumber: Int) = smp match {
+    case Some(simplePage) => Some((simplePage.bb.y2 - simplePage.bb.y1, simplePage.bb.x2 - simplePage.bb.x1))
+    case _ => None
   }
 
   @inline def allenAIBoxtoSeq(b: Box, cvRatio: Float = 1f): Seq[Float] =
@@ -181,10 +183,18 @@ object AllenAIDataConversion {
 
   def allenAITableToMyTable(atable: AllenAITable, pdLoc: String): Option[IntermediateTable] = atable.ImageText match {
     case Some(wordsOrg) =>
+
+      val pdDoc = PDDocument.load(new File(pdLoc))
+      val simplePage = Try(ProcessDocument(pdDoc).pages(atable.Page)) match {
+        case Success(page) => Some(page);
+        case Failure(e) => { logger.error(s"[PDSimplify failed]: ${e.getMessage}"); None }
+      }
+      pdDoc.close()
+
       val cvRatio = atable.DPI / 72f
       val tableBB = allenAIBoxtoSeq(atable.ImageBB)
       val words = wordsOrg.map(x => x.copy(TextBB = x.TextBB.map(_ / cvRatio)))
-      val (pageHeight, pageWidth) = getPageHeightWidth(pdLoc, atable.Page)
+      val (pageHeight, pageWidth) = getPageHeightWidth(simplePage, atable.Page) match { case Some((h, w)) => (h, w); case _ => (842f, 595f) } //defaulting to A4
       val imTable = IntermediateTable(
         bb = Rectangle(tableBB.head, tableBB(1), tableBB(2), tableBB(3)),
         textSegments = words.map(w =>
@@ -201,7 +211,7 @@ object AllenAIDataConversion {
         caption = Some(atable.Caption),
         mention = atable.Mention,
         pageNo = atable.Page,
-        pdLines = getPDLines(pdLoc, tableBB, atable.Page),
+        pdLines = getPDLines(simplePage, tableBB, atable.Page) match { case Some(pdLines) => pdLines; case _ => Seq.empty[PDSegment] },
         pageHeight = pageHeight,
         pageWidth = pageWidth,
         dpi = atable.DPI,

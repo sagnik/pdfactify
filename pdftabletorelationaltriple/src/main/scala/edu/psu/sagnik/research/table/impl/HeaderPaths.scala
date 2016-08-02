@@ -1,9 +1,11 @@
 package edu.psu.sagnik.research.table.impl
 
 import edu.psu.sagnik.research.table.model.AllenAIDataConversion
-import edu.psu.sagnik.research.table.tablecellextraction.{ CellRenaming, CombineWords }
+import edu.psu.sagnik.research.table.tablecellextraction.{CellRenaming, CombineWords}
 import edu.psu.sagnik.research.table.tripleextraction.TabletoWFT
 import org.allenai.common.Logging
+
+import scala.concurrent.Future
 
 /** Created by schoudhury on 7/25/16.
   */
@@ -47,12 +49,14 @@ object HeaderPaths extends Logging {
     val baseDir = "/Users/schoudhury/data/econpapers/ageconsearch.umn.edu/"
     val pdfDir = baseDir + "pdfs/"
     val jsonDir = baseDir + "tablejsons/"
-    val pdfBase = "1"
+    //val pdfBase = "2"
 
-    val pdfBases=(1 to 4152).map(_.toString)
+    val pdfBases = (1 to 4152).map(_.toString)
 
+    import scala.language.postfixOps
     for (pdfBase<-pdfBases) {
       println(s"[working on]: $pdfBase")
+      logger.debug(s"\n--------------------\n[working on]: $pdfBase\n--------------------\n")
       val pdfLoc = pdfDir + pdfBase + ".pdf"
       HeaderPaths.apply(pdfLoc, jsonDir, pdfBase)
     }

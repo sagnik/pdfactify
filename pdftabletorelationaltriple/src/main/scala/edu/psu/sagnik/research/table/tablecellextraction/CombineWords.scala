@@ -19,8 +19,9 @@ see model.AllenAIDataConversion
 // scalastyle:off
 import java.util.logging.Logger
 
-import edu.psu.sagnik.research.pdsimplify.path.model.{ PDLine, PDSegment }
-import edu.psu.sagnik.research.table.model.{ IntermediateTable, Rectangle, TextGeneric }
+import edu.psu.sagnik.research.allenaiconversion.{IntermediateTable, Rectangle, TextGeneric}
+import edu.psu.sagnik.research.pdsimplify.path.model.{PDLine, PDSegment}
+import edu.psu.sagnik.research.table.model.{IntermediateTable, TextGeneric}
 import org.allenai.common.Logging
 
 object CombineWords extends Logging {
@@ -29,8 +30,7 @@ object CombineWords extends Logging {
   def A(x: String, y: Rectangle) = TextGeneric(x, y)
 
   def wordMergedTable(table: IntermediateTable): IntermediateTable = table.copy(
-    textSegments = horizontalMerge(table.textSegments, table.pdLines,
-      WordMergeHeuristics.mergeThresholdWordMedian)
+    textSegments = horizontalMerge(table.textSegments, table.pdLines, WordMergeHeuristics.mergeThresholdWordMedian)
   )
 
   /* this function will be changed with linear chain CRFs to facilitate merging*/

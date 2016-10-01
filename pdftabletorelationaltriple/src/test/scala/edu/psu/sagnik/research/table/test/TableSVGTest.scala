@@ -1,9 +1,9 @@
 package edu.psu.sagnik.research.table.test
 
-import edu.psu.sagnik.research.pdsimplify.path.model.{ PDCurve, PDLine, PDSegment, PathStyle }
+import edu.psu.sagnik.research.allenaiconversion.{AllenAIDataConversion, Rectangle}
+import edu.psu.sagnik.research.pdsimplify.path.model.{PDCurve, PDLine, PDSegment, PathStyle}
 import edu.psu.sagnik.research.pdsimplify.text.model.PDChar
-import edu.psu.sagnik.research.table.model.{ AllenAIDataConversion, Rectangle }
-import edu.psu.sagnik.research.table.tablecellextraction.{ CellRenaming, CombineWords }
+import edu.psu.sagnik.research.table.tablecellextraction.{CellRenaming, CombineWords}
 import edu.psu.sagnik.research.table.tripleextraction.CriticalCell
 import org.scalatest.FunSpec
 

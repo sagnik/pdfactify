@@ -1,6 +1,6 @@
 package edu.psu.sagnik.research.table.impl
 
-import edu.psu.sagnik.research.table.model.AllenAIDataConversion
+import edu.psu.sagnik.research.allenaiconversion.AllenAIDataConversion
 import edu.psu.sagnik.research.table.tablecellextraction.{CellRenaming, CombineWords}
 import edu.psu.sagnik.research.table.tripleextraction.TabletoWFT
 import org.allenai.common.Logging

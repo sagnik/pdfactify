@@ -22,7 +22,8 @@ object AllenAITableCreator {
   }
 
   def main(args: Array[String]): Unit = {
-    val pdLoc = "/Users/schoudhury/data/econpapers/ageconsearch.umn.edu/pdfs/1.pdf"
+    //val pdLoc = "/Users/schoudhury/data/econpapers/ageconsearch.umn.edu/pdfs/1.pdf"
+    val pdLoc = "/home/sagnik/data/nlp-table-data/pdfs/W04-1603.pdf"
     AllenAITableCreator(pdLoc)
   }
 

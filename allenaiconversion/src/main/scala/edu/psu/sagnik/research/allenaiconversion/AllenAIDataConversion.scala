@@ -1,4 +1,4 @@
-package edu.psu.sagnik.research.table.model
+package edu.psu.sagnik.research.allenaiconversion
 
 import java.awt.geom.Point2D
 import java.io.File
@@ -6,26 +6,14 @@ import java.io.File
 import edu.psu.sagnik.research.pdsimplify.impl.ProcessDocument
 import edu.psu.sagnik.research.pdsimplify.model.PDPageSimple
 import edu.psu.sagnik.research.pdsimplify.path.impl.BB
-import org.apache.pdfbox.pdmodel.PDDocument
-import edu.psu.sagnik.research.pdsimplify.path.model._
+import edu.psu.sagnik.research.pdsimplify.path.model.{PDCurve, PDLine, PDSegment}
 import edu.psu.sagnik.research.pdsimplify.raster.model.PDRasterImage
 import org.allenai.common.Logging
-import org.allenai.pdffigures2.{ Box, FigureExtractor, FigureType }
-import org.json4s.native.JsonMethods._
+import org.allenai.pdffigures2.{Box, FigureExtractor, FigureType}
+import org.apache.pdfbox.pdmodel.PDDocument
 
-import scala.util.{ Failure, Success, Try }
+import scala.util.{Failure, Success, Try}
 
-/** Created by schoudhury on 8/21/15.
-  */
-/*
-We are currently using the output from pdffigures code from allenai (https://github.com/allenai/pdffigures)
-This does a really good job in producing table boundaries in scholarly papers. The case classes
-in TableADT.scala show the JSON schema.
-If you change that to Roman's output, you have to first figure out a way to write
-or produce a JSON file with the case class schema given in com.nitro.research.model.TableADT.AllenAITable.
-*/
-
-// scalastyle:off
 object AllenAIDataConversion extends Logging {
 
   protected implicit class FloatEquality(val a: Float) extends AnyVal {
@@ -36,7 +24,6 @@ object AllenAIDataConversion extends Logging {
       math.abs(a - b) <= 1f
   }
 
-  implicit val formats = org.json4s.DefaultFormats
 
   type A = TextGeneric
 
@@ -44,6 +31,7 @@ object AllenAIDataConversion extends Logging {
 
   def jsonToString(inpFile: String): String = scala.io.Source.fromFile(inpFile).mkString
 
+  implicit val formats = org.json4s.DefaultFormats
   def jsonTocaseClasses(jsonStr: String): AllenAITable = parse(jsonStr).extract[AllenAITable] //for test
 
   def fromPDFFigures2(pdLoc: String): Seq[AllenAITable] = {

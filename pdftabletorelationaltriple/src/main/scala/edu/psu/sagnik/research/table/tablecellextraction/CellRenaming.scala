@@ -5,6 +5,7 @@ package edu.psu.sagnik.research.table.tablecellextraction
 
 // scalastyle:off
 
+import edu.psu.sagnik.research.allenaiconversion.Rectangle
 import edu.psu.sagnik.research.table.model._
 import org.allenai.common.Logging
 /*We assume that the intermediate table has text blocks (TextGeneric) that are equivalent to cells. We are going to take these

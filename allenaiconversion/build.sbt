@@ -1,12 +1,21 @@
 organization := "edu.psu.sagnik.research"
 
-name := "pdftables-relationaltriple"
+name := "allenaidataconversion"
 
 javacOptions += "-Xlint:unchecked"
 
 scalaVersion in ThisBuild := "2.11.8"
 
+
+
 libraryDependencies ++= Seq(
+  //pdfparser for graphics paths
+  "edu.psu.sagnik.research" %% "pdsimplifyparser" % "0.0.6" exclude("javax.jms", "jms") exclude("com.sun.jdmk", "jmxtools") exclude("com.sun.jmx", "jmxri"),
+  //jackson for json
+  "org.json4s" %% "json4s-native" % "3.2.11",
+  "org.json4s" %% "json4s-jackson" % "3.2.10",
+  //play for timeout
+  "com.typesafe.akka" % "akka-actor_2.11" % "2.4.8",
   //for test
   "org.scalatest"  % "scalatest_2.11"             % "2.2.1"   % "test" withSources() withJavadoc(),
   "org.scalacheck" %% "scalacheck"                % "1.12.1"  % "test" withSources() withJavadoc()

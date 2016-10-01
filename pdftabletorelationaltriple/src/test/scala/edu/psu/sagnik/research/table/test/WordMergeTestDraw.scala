@@ -5,7 +5,7 @@ import java.awt.image.BufferedImage
 import java.io.File
 import javax.imageio.ImageIO
 
-import edu.psu.sagnik.research.table.model.{ AllenAIDataConversion, Rectangle }
+import edu.psu.sagnik.research.allenaiconversion.{AllenAIDataConversion, Rectangle}
 import edu.psu.sagnik.research.table.tablecellextraction.CombineWords
 import org.scalatest.FunSpec
 

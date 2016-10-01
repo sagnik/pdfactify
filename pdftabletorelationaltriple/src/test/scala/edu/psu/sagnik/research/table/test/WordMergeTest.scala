@@ -1,8 +1,8 @@
 package edu.psu.sagnik.research.table.test
 
+import edu.psu.sagnik.research.allenaiconversion.AllenAIDataConversion
 import edu.psu.sagnik.research.table.tablecellextraction.CombineWords
 import org.scalatest.FunSpec
-import edu.psu.sagnik.research.table.model.AllenAIDataConversion
 
 /** Created by schoudhury on 8/19/15.
   */

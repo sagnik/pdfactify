@@ -1,8 +1,8 @@
 package edu.psu.sagnik.research.table.test
 
-import edu.psu.sagnik.research.pdsimplify.path.model.{ PDCurve, PDLine, PDSegment }
+import edu.psu.sagnik.research.allenaiconversion.AllenAIDataConversion
+import edu.psu.sagnik.research.pdsimplify.path.model.{PDCurve, PDLine, PDSegment}
 import edu.psu.sagnik.research.pdsimplify.text.model.PDChar
-import edu.psu.sagnik.research.table.model.AllenAIDataConversion
 import org.scalatest.FunSpec
 
 import scala.reflect.io.File

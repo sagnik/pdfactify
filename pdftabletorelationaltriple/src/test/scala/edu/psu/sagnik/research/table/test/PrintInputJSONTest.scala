@@ -1,6 +1,6 @@
 package edu.psu.sagnik.research.table.test
 
-import edu.psu.sagnik.research.table.model.AllenAIDataConversion
+import edu.psu.sagnik.research.allenaiconversion.AllenAIDataConversion
 import org.scalatest.FunSpec
 
 /** Created by schoudhury on 8/6/15.

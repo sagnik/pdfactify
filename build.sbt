@@ -3,7 +3,15 @@ version in ThisBuild := {
   val minor = 0
   val patch = 1
   s"$major.$minor.$patch"
-} 
+}
+
+scalaVersion in ThisBuild := "2.11.8"
+
+javacOptions += "-Xlint:unchecked"
+
+organization := "edu.psu.sagnik.research"
+
+name := "pdfactify"
 
 scalaVersion in ThisBuild := "2.11.8"
 
@@ -16,19 +24,30 @@ name := "pdfactify"
 lazy val root = project
   .in(file("."))
   .aggregate(
-    pdffigures, 
+    pdffigures,
+    allenaiconversion,
+    pdftoSVGfigure,
     pdftabletorelationaltriple
  )
   .settings(publishArtifact := false)
 
 lazy val pdffigures = project
   .in(file("pdffigures2"))
-  //.enablePlugins(WebServicePlugin)
+  .settings(publishArtifact := false)
+
+lazy val allenaiconversion = project
+  .in(file("allenaiconversion"))
+  .dependsOn(pdffigures)
+  .settings(publishArtifact := false)
+
+lazy val pdftoSVGfigure = project
+    .in(file("pdftoSVGfigure"))
+  .dependsOn(allenaiconversion)
   .settings(publishArtifact := false)
 
 lazy val pdftabletorelationaltriple  = project
   .in(file("pdftabletorelationaltriple"))
-  .dependsOn(pdffigures)
+  .dependsOn(allenaiconversion)
   .settings(publishArtifact := false)
 
 lazy val subprojects: Seq[ProjectReference] = root.aggregate

@@ -1,6 +1,7 @@
 package edu.psu.sagnik.research.table.impl
 
-import edu.psu.sagnik.research.table.model.{ Rectangle, WFT }
+import edu.psu.sagnik.research.allenaiconversion.Rectangle
+import edu.psu.sagnik.research.table.model.WFT
 import org.json4s.JsonDSL._
 import org.json4s.jackson.JsonMethods._
 

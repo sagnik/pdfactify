@@ -1,8 +1,8 @@
 package edu.psu.sagnik.research.table.test
-import edu.psu.sagnik.research.table.tablecellextraction.{ CellRenaming, CombineWords }
+import edu.psu.sagnik.research.allenaiconversion.AllenAIDataConversion
+import edu.psu.sagnik.research.table.tablecellextraction.{CellRenaming, CombineWords}
 import edu.psu.sagnik.research.table.tripleextraction.CriticalCell
 import org.scalatest.FunSpec
-import edu.psu.sagnik.research.table.model.AllenAIDataConversion
 
 /** Created by schoudhury on 8/21/15.
   */

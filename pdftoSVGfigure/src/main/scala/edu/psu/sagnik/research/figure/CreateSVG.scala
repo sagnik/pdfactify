@@ -37,9 +37,7 @@ object CreateSVG extends App with Logging{
 
   simpleDocument match {
     case Some(doc) =>
-      val csxFigures = allenAIFigures.map {
-        x => AllenAIDataConversion.allenAIFigureToMyFigure(x,Some(doc.pages(x.Page)))
-      }
+      val csxFigures = allenAIFigures.map {x => AllenAIDataConversion.allenAIFigureToMyFigure( x,Some(doc.pages(x.Page)))}
       println (s"${csxFigures.size} figures created for CiteSeerX")
       val svgDir = new File (pdLoc.dropRight (4) )
       import org.apache.commons.io.FileUtils

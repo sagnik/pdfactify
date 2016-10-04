@@ -190,7 +190,7 @@ object AllenAIDataConversion extends Logging {
   @inline def allenAIBoxtoSeq(b: Box, cvRatio: Float = 1f): Seq[Float] =
     Seq(b.x1.toFloat / cvRatio, b.y1.toFloat / cvRatio, b.x2.toFloat / cvRatio, b.y2.toFloat / cvRatio)
 
-  def allenAITableToMyTable(aTable: AllenAITable, pdfLoc: String): Option[IntermediateTable]={
+  def allenAITableToMyTable(aTable: AllenAITable, pdfLoc: String): Option[IntermediateTable]= {
     val pdDoc = PDDocument.load(new File(pdfLoc))
     val simpleDocument = Try(ProcessDocument(pdDoc)) match {
       case Success(document) => Some(document);
@@ -201,8 +201,9 @@ object AllenAIDataConversion extends Logging {
     }
     pdDoc.close()
     simpleDocument match {
-      case Some(doc) =>  allenAITableToMyTable(aTable,Some(doc.pages(aTable.Page)))
+      case Some(doc) => allenAITableToMyTable(aTable, Some(doc.pages(aTable.Page)))
       case _ => None
+    }
   }
 
   def allenAITableToMyTable(aTable: AllenAITable, simplePage: Option[PDPageSimple]): Option[IntermediateTable] = aTable.ImageText match {
@@ -213,7 +214,7 @@ object AllenAIDataConversion extends Logging {
       val words = wordsOrg.map(x => x.copy(TextBB = x.TextBB.map(_ / cvRatio)))
       val (pageHeight, pageWidth) =
         getPageHeightWidth(simplePage, aTable.Page) match { case Some((h, w)) => (h, w); case _ => (842f, 595f) } //defaulting to A4
-      val imTable = IntermediateTable(
+    val imTable = IntermediateTable(
         bb = Rectangle(tableBB.head, tableBB(1), tableBB(2), tableBB(3)),
         textSegments = words.map(w =>
           A(

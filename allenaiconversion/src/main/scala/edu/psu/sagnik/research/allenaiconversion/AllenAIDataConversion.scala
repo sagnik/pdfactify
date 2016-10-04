@@ -9,7 +9,7 @@ import edu.psu.sagnik.research.pdsimplify.path.impl.BB
 import edu.psu.sagnik.research.pdsimplify.path.model.{PDCurve, PDLine, PDSegment}
 import edu.psu.sagnik.research.pdsimplify.raster.model.PDRasterImage
 import org.allenai.common.Logging
-import org.allenai.pdffigures2.{Box, FigureExtractor, FigureType}
+import org.allenai.pdffigures2.{Box, Figure, FigureExtractor, FigureType}
 import org.apache.pdfbox.pdmodel.PDDocument
 
 import scala.util.{Failure, Success, Try}
@@ -27,19 +27,40 @@ object AllenAIDataConversion extends Logging {
 
   type A = TextGeneric
 
-  def A(x: String, y: Rectangle) = TextGeneric(x, y)
+  def A(x: String, y: Rectangle, z: Int) = TextGeneric(x, y, z)
 
   def jsonToString(inpFile: String): String = scala.io.Source.fromFile(inpFile).mkString
 
-  implicit val formats = org.json4s.DefaultFormats
-  def jsonTocaseClasses(jsonStr: String): AllenAITable = parse(jsonStr).extract[AllenAITable] //for test
+  import org.json4s._
+  import org.json4s.jackson.JsonMethods._
 
-  def fromPDFFigures2(pdLoc: String): Seq[AllenAITable] = {
+  implicit val formats = org.json4s.DefaultFormats
+  def jsonToCaseClasses(jsonStr: String): AllenAITable = parse(jsonStr).extract[AllenAITable] //for test
+
+  lazy val tableFromPDFFigures2= (pdLoc: String) => {
     val doc = PDDocument.load(new File(pdLoc))
     val figureExtractor = FigureExtractor()
     val document = figureExtractor.getFiguresWithText(doc)
     document.figures.filter(_.figType == FigureType.Table).map(t =>
       AllenAITable(
+        Caption = t.caption,
+        Page = t.page,
+        CaptionBB = t.captionBoundary,
+        ImageBB = t.regionBoundary,
+        ImageText = if (t.imageText.isEmpty) None else Some(t.imageText.map(x => AllenAIWord(0, x.text, allenAIBoxtoSeq(x.boundary)))), //TODO: rotation
+        Mention = None,
+        DPI = 72,
+        id = t.id
+      ))
+
+  }
+
+  lazy val figureFromPDFFigures2 = (pdLoc: String) => {
+    val doc = PDDocument.load(new File(pdLoc))
+    val figureExtractor = FigureExtractor()
+    val document = figureExtractor.getFiguresWithText(doc)
+    document.figures.filter(_.figType == FigureType.Figure).map(t =>
+      AllenAIFigure(
         Caption = t.caption,
         Page = t.page,
         CaptionBB = t.captionBoundary,
@@ -169,20 +190,14 @@ object AllenAIDataConversion extends Logging {
   @inline def allenAIBoxtoSeq(b: Box, cvRatio: Float = 1f): Seq[Float] =
     Seq(b.x1.toFloat / cvRatio, b.y1.toFloat / cvRatio, b.x2.toFloat / cvRatio, b.y2.toFloat / cvRatio)
 
-  def allenAITableToMyTable(atable: AllenAITable, pdLoc: String): Option[IntermediateTable] = atable.ImageText match {
+  def allenAITableToMyTable(aTable: AllenAITable, simplePage: Option[PDPageSimple]): Option[IntermediateTable] = aTable.ImageText match {
     case Some(wordsOrg) =>
 
-      val pdDoc = PDDocument.load(new File(pdLoc))
-      val simplePage = Try(ProcessDocument(pdDoc).pages(atable.Page)) match {
-        case Success(page) => Some(page);
-        case Failure(e) => { logger.error(s"[PDSimplify failed]: ${e.getMessage}"); None }
-      }
-      pdDoc.close()
-
-      val cvRatio = atable.DPI / 72f
-      val tableBB = allenAIBoxtoSeq(atable.ImageBB)
+      val cvRatio = aTable.DPI / 72f
+      val tableBB = allenAIBoxtoSeq(aTable.ImageBB)
       val words = wordsOrg.map(x => x.copy(TextBB = x.TextBB.map(_ / cvRatio)))
-      val (pageHeight, pageWidth) = getPageHeightWidth(simplePage, atable.Page) match { case Some((h, w)) => (h, w); case _ => (842f, 595f) } //defaulting to A4
+      val (pageHeight, pageWidth) =
+        getPageHeightWidth(simplePage, aTable.Page) match { case Some((h, w)) => (h, w); case _ => (842f, 595f) } //defaulting to A4
       val imTable = IntermediateTable(
         bb = Rectangle(tableBB.head, tableBB(1), tableBB(2), tableBB(3)),
         textSegments = words.map(w =>
@@ -193,17 +208,19 @@ object AllenAIDataConversion extends Logging {
               w.TextBB(1) - tableBB(1) + 2,
               w.TextBB(2) - tableBB.head - 2,
               w.TextBB(3) - tableBB(1) - 2
-            )
-          )),
+            ),
+            w.Rotation
+          )
+        ),
 
-        caption = Some(atable.Caption),
-        mention = atable.Mention,
-        pageNo = atable.Page,
-        pdLines = getPDLines(simplePage, tableBB, atable.Page) match { case Some(pdLines) => pdLines; case _ => Seq.empty[PDSegment] },
+        caption = Some(aTable.Caption),
+        mention = aTable.Mention,
+        pageNo = aTable.Page,
+        pdLines = getPDLines(simplePage, tableBB, aTable.Page) match { case Some(pdLines) => pdLines; case _ => Seq.empty[PDSegment] },
         pageHeight = pageHeight,
         pageWidth = pageWidth,
-        dpi = atable.DPI,
-        id = atable.id
+        dpi = aTable.DPI,
+        id = aTable.id
       )
       //println(imTable.pdLines)
       if (imTable.textSegments.nonEmpty) Some(imTable)
@@ -212,4 +229,45 @@ object AllenAIDataConversion extends Logging {
     case _ => None
   }
 
+  def allenAIFigureToMyFigure(aFigure: AllenAIFigure, simplePage: Option[PDPageSimple]): Option[CiteSeerXFigure] = {
+
+    val cvRatio = aFigure.DPI / 72f
+    val figureBB = allenAIBoxtoSeq(aFigure.ImageBB)
+    val words = aFigure.ImageText.get
+    val (pageHeight, pageWidth) = getPageHeightWidth(simplePage, aFigure.Page) match {
+      case Some((h, w)) => (h, w);
+      case _ => (842f, 595f)
+    } //defaulting to A4
+    val csxFigure = CiteSeerXFigure(
+        bb = Rectangle(figureBB.head, figureBB(1), figureBB(2), figureBB(3)),
+        words.map(w =>
+          A(
+            w.Text,
+            Rectangle(
+              w.TextBB.head - figureBB.head + 2, //shortening the table
+              w.TextBB(1) - figureBB(1) + 2,
+              w.TextBB(2) - figureBB.head - 2,
+              w.TextBB(3) - figureBB(1) - 2
+            ),
+            w.Rotation
+          )
+        ),
+
+        caption = Some(aFigure.Caption),
+        mention = aFigure.Mention,
+        pageNo = aFigure.Page,
+        pdLines = getPDLines(simplePage, figureBB, aFigure.Page) match {
+          case Some(pdLines) => pdLines;
+          case _ => Seq.empty[PDSegment]
+        },
+        pageHeight = pageHeight,
+        pageWidth = pageWidth,
+        dpi = aFigure.DPI,
+        id = aFigure.id
+      )
+    //println(imTable.pdLines)
+    if (csxFigure.pdLines.nonEmpty) Some(csxFigure)
+    else None
+
+  }
 }

@@ -10,7 +10,7 @@ import edu.psu.sagnik.research.pdsimplify.path.model.PDSegment
 import org.allenai.pdffigures2.{Box, WordwithBB}
 
 
-case class Figure(
+case class CiteSeerXFigure(
                    bb: Rectangle,
                    textWords: Seq[AllenAIWord],
                    caption: Option[String],

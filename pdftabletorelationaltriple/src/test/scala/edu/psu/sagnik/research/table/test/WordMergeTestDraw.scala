@@ -17,7 +17,7 @@ class WordMergeTestDraw extends FunSpec {
   def createImage(jsonLoc: String, imageLoc: String): Unit = {
     val myTable = AllenAIDataConversion.
       allenAITableToMyTable(
-        AllenAIDataConversion.jsonTocaseClasses(
+        AllenAIDataConversion.jsonToCaseClasses(
           AllenAIDataConversion.jsonToString(jsonLoc)
         ), DataLocation.pdfLoc
       )

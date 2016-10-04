@@ -12,7 +12,7 @@ class CritiCalCellTest extends FunSpec {
     it("should print the critical cell from a table") {
       val mytable = AllenAIDataConversion.
         allenAITableToMyTable(
-          AllenAIDataConversion.jsonTocaseClasses(
+          AllenAIDataConversion.jsonToCaseClasses(
             AllenAIDataConversion.jsonToString(DataLocation.jsonLoc)
           ), DataLocation.pdfLoc
         )

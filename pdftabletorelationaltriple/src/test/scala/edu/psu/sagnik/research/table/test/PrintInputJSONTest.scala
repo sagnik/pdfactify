@@ -8,7 +8,7 @@ import org.scalatest.FunSpec
 class PrintInputJSONTest extends FunSpec {
   describe("testing whether the input has been parsed properly") {
     it("should print the words from a table.") {
-      val words = AllenAIDataConversion.jsonTocaseClasses(AllenAIDataConversion.jsonToString(DataLocation.jsonLoc)).ImageText
+      val words = AllenAIDataConversion.jsonToCaseClasses(AllenAIDataConversion.jsonToString(DataLocation.jsonLoc)).ImageText
       words match {
         case Some(words) => words.foreach(w => println(s"word: ${w.Text} bb: ${w.TextBB}"))
         case None => println { "no words in table" }

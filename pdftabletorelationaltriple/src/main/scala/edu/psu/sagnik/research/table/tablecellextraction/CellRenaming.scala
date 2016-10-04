@@ -5,7 +5,7 @@ package edu.psu.sagnik.research.table.tablecellextraction
 
 // scalastyle:off
 
-import edu.psu.sagnik.research.allenaiconversion.Rectangle
+import edu.psu.sagnik.research.allenaiconversion.{IntermediateTable, Rectangle, TextGeneric}
 import edu.psu.sagnik.research.table.model._
 import org.allenai.common.Logging
 /*We assume that the intermediate table has text blocks (TextGeneric) that are equivalent to cells. We are going to take these
@@ -43,7 +43,7 @@ object CellRenaming extends Logging {
   }
 
   type A = TextGeneric
-  def A(x: String, y: Rectangle) = TextGeneric(x, y)
+  def A(x: String, y: Rectangle, z:Int) = TextGeneric(x, y,z)
   type B = UnClassifiedCell
   def B(x: Int, y: Int, s: A) = UnClassifiedCell(x, y, s)
 

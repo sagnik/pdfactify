@@ -25,7 +25,7 @@ class HeaderPathTestBatch extends FunSpec {
   def RowHeaderPathTest(jsonLoc: String): Unit = {
     val mytable = AllenAIDataConversion.
       allenAITableToMyTable(
-        AllenAIDataConversion.jsonTocaseClasses(
+        AllenAIDataConversion.jsonToCaseClasses(
           AllenAIDataConversion.jsonToString(jsonLoc)
         ), DataLocation.pdfLoc
       )

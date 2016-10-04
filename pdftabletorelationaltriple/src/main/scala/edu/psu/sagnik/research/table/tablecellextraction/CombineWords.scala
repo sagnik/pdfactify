@@ -21,13 +21,12 @@ import java.util.logging.Logger
 
 import edu.psu.sagnik.research.allenaiconversion.{IntermediateTable, Rectangle, TextGeneric}
 import edu.psu.sagnik.research.pdsimplify.path.model.{PDLine, PDSegment}
-import edu.psu.sagnik.research.table.model.{IntermediateTable, TextGeneric}
 import org.allenai.common.Logging
 
 object CombineWords extends Logging {
 
   type A = TextGeneric
-  def A(x: String, y: Rectangle) = TextGeneric(x, y)
+  def A(x: String, y: Rectangle, z:Int) = TextGeneric(x, y,z)
 
   def wordMergedTable(table: IntermediateTable): IntermediateTable = table.copy(
     textSegments = horizontalMerge(table.textSegments, table.pdLines, WordMergeHeuristics.mergeThresholdWordMedian)
@@ -44,7 +43,8 @@ object CombineWords extends Logging {
     val (left, right) = if (y.bb.x2 < x.bb.x1) (y, x) else (x, y)
     A(
       left.content + " " + right.content,
-      Rectangle(left.bb.x1, List(x.bb.y1, y.bb.y1).min, right.bb.x2, List(x.bb.y2, y.bb.y2).max)
+      Rectangle(left.bb.x1, List(x.bb.y1, y.bb.y1).min, right.bb.x2, List(x.bb.y2, y.bb.y2).max),
+      left.rotation
     )
   }
 

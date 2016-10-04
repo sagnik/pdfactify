@@ -1,5 +1,6 @@
 package edu.psu.sagnik.research.table.tripleextraction
 
+import edu.psu.sagnik.research.allenaiconversion.TextGeneric
 import edu.psu.sagnik.research.table.model._
 
 /** Created by schoudhury on 8/21/15.

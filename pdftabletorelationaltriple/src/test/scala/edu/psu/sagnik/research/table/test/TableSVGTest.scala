@@ -54,7 +54,7 @@ class TableSVGTest extends FunSpec {
     it("should create an SVG for the table with the paths") {
       val myTable = AllenAIDataConversion.
         allenAITableToMyTable(
-          AllenAIDataConversion.jsonTocaseClasses(
+          AllenAIDataConversion.jsonToCaseClasses(
             AllenAIDataConversion.jsonToString(DataLocation.jsonLoc)
           ), DataLocation.pdfLoc
         )

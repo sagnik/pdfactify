@@ -1,7 +1,6 @@
 package edu.psu.sagnik.research.table.tablecellextraction
 
 import edu.psu.sagnik.research.allenaiconversion.{Rectangle, TextGeneric}
-import edu.psu.sagnik.research.table.model.TextGeneric
 
 /** Created by schoudhury on 8/20/15.
   */

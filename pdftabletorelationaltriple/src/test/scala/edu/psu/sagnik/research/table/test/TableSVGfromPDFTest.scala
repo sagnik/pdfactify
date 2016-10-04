@@ -50,7 +50,7 @@ class TableSVGfromPDFTest extends FunSpec {
 
   describe("creates an SVG for the table with the paths") {
     it("should create an SVG for the table with the paths") {
-      val myTables = AllenAIDataConversion.fromPDFFigures2(DataLocation.pdfLoc)
+      val myTables = AllenAIDataConversion.tableFromPDFFigures2(DataLocation.pdfLoc)
         .map(
           atable => AllenAIDataConversion.allenAITableToMyTable(atable, DataLocation.pdfLoc)
         )

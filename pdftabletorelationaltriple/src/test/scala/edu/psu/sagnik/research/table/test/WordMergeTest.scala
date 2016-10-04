@@ -12,7 +12,7 @@ class WordMergeTest extends FunSpec {
     it("should print the merged cells from a table") {
       val mytable = AllenAIDataConversion.
         allenAITableToMyTable(
-          AllenAIDataConversion.jsonTocaseClasses(
+          AllenAIDataConversion.jsonToCaseClasses(
             AllenAIDataConversion.jsonToString(DataLocation.jsonLoc)
           ), DataLocation.pdfLoc
         )

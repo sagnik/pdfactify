@@ -7,7 +7,7 @@ import org.allenai.pdffigures2.Box
   * Created by sagnik on 10/1/16.
   */
 
-case class TextGeneric(content: String, bb: Rectangle)
+case class TextGeneric(content: String, bb: Rectangle, rotation: Int)
 
 case class AllenAIWord(Rotation: Int, Text: String, TextBB: Seq[Float])
 
@@ -44,5 +44,18 @@ case class AllenAIFigure(
                           Mention: Option[String],
                           DPI: Int,
                           id: String
+                        )
+
+case class CiteSeerXFigure(
+                            bb: Rectangle,
+                            textSegments: Seq[TextGeneric],
+                            caption: Option[String],
+                            mention: Option[String],
+                            pageNo: Int,
+                            pdLines: Seq[PDSegment],
+                            pageHeight: Float,
+                            pageWidth: Float,
+                            dpi: Int,
+                            id: String
                         )
 

@@ -190,6 +190,21 @@ object AllenAIDataConversion extends Logging {
   @inline def allenAIBoxtoSeq(b: Box, cvRatio: Float = 1f): Seq[Float] =
     Seq(b.x1.toFloat / cvRatio, b.y1.toFloat / cvRatio, b.x2.toFloat / cvRatio, b.y2.toFloat / cvRatio)
 
+  def allenAITableToMyTable(aTable: AllenAITable, pdfLoc: String): Option[IntermediateTable]={
+    val pdDoc = PDDocument.load(new File(pdfLoc))
+    val simpleDocument = Try(ProcessDocument(pdDoc)) match {
+      case Success(document) => Some(document);
+      case Failure(e) => {
+        System.err.println(s"[PDSimplify failed]: ${e.getMessage}")
+        None
+      }
+    }
+    pdDoc.close()
+    simpleDocument match {
+      case Some(doc) =>  allenAITableToMyTable(aTable,Some(doc.pages(aTable.Page)))
+      case _ => None
+  }
+
   def allenAITableToMyTable(aTable: AllenAITable, simplePage: Option[PDPageSimple]): Option[IntermediateTable] = aTable.ImageText match {
     case Some(wordsOrg) =>
 

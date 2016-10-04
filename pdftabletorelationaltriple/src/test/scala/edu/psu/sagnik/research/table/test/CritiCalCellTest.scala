@@ -10,12 +10,12 @@ import org.scalatest.FunSpec
 class CritiCalCellTest extends FunSpec {
   describe("testing if we can find the critical cell for a table") {
     it("should print the critical cell from a table") {
-      val mytable = AllenAIDataConversion.
-        allenAITableToMyTable(
-          AllenAIDataConversion.jsonToCaseClasses(
-            AllenAIDataConversion.jsonToString(DataLocation.jsonLoc)
-          ), DataLocation.pdfLoc
-        )
+
+      val mytable = AllenAIDataConversion.allenAITableToMyTable(
+        AllenAIDataConversion.jsonToCaseClasses(
+          AllenAIDataConversion.jsonToString(DataLocation.jsonLoc)),
+        DataLocation.pdfLoc
+      )
 
       mytable match {
         case Some(properTable) => {

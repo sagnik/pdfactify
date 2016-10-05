@@ -25,6 +25,8 @@ object CreateSVG extends App with Logging{
   val pdLoc="/home/sagnik/Downloads/ketwww15.pdf"
 
   val allenAIFigures=AllenAIDataConversion.figureFromPDFFigures2(pdLoc)
+  val allenAITables=AllenAIDataConversion.tableFromPDFFigures2(pdLoc)
+
   println(s"${allenAIFigures.size} figures created from AllenAI")
 
   val pdDoc = PDDocument.load(new File(pdLoc))
@@ -40,6 +42,7 @@ object CreateSVG extends App with Logging{
   simpleDocument match {
     case Some(doc) =>
       val csxFigures = allenAIFigures.map {x => AllenAIDataConversion.allenAIFigureToMyFigure( x,Some(doc.pages(x.Page)))}
+      val csxTables = allenAITables.map {x => AllenAIDataConversion.allenAITableToMyTable( x,Some(doc.pages(x.Page)))}
       println (s"${csxFigures.size} figures created for CiteSeerX")
       val svgDir = new File (pdLoc.dropRight (4) )
       import org.apache.commons.io.FileUtils
@@ -60,6 +63,16 @@ object CreateSVG extends App with Logging{
               height = f.bb.y2 - f.bb.y1
             )
         )
+        csxTables.flatten.foreach (f =>
+          new createSVG()
+            .writeSVG (
+              paths = f.pdLines,
+              svgLoc = s"${svgDir.getAbsolutePath}/${pdLoc.split ("/").last.dropRight (4)}-Table-${f.id}.svg",
+              width = f.bb.x2 - f.bb.x1,
+              height = f.bb.y2 - f.bb.y1
+            )
+        )
+
       }
     case _ => {s"Could not create SVGs for ${pdLoc}"}
   }
@@ -71,7 +84,7 @@ class createSVG extends Logging{
 
     case p:PDSegment =>
       "<path d=\"" +
-        PathHelper.segmentToString (p) + "\" " + PathHelper.getStyleString (pathStyle.get) +
+        PathHelper.segmentToString (p) + "\" " + PathHelper.getStyleString (pathStyle) +
         " />"
 
     case p:PDRasterImage => "<image width=\"" +
@@ -83,6 +96,21 @@ class createSVG extends Logging{
       "\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" />"
 
     case _ => ""
+  }
+
+  def writeSVG(paths: Seq[PDSegment],svgLoc: String, width: Float, height: Float): Unit = {
+    val svgStart = "<?xml version=\"1.0\" standalone=\"no\"?>\n\n<svg height=\"" +
+      height +
+      "\" width=\"" +
+      width +
+      "\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\">" +
+      "\n"
+
+    val content = paths.map(x => getSvgString(x, None,width, height)).mkString("\n")
+    val svgEnd = "\n</svg>"
+    import scala.reflect.io.File
+    File(svgLoc).writeAll(svgStart + content + svgEnd)
+    println(s"written SVG at ${svgLoc}")
   }
 
   def writeSVG(

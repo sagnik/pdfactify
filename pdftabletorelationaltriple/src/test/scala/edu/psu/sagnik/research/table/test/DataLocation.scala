@@ -13,6 +13,15 @@ object DataLocation {
   val baseFile = "1" //"W11-2916" //"N10-1104"
   val tableBase = "-Table-"
   val tableID = tableBase + "5"
+
+/*
+  val basePDir = "/Users/schoudhury/data/econpapers/ageconsearch.umn.edu/pdfs/" //"src/test/resources/pdfs/"
+  val baseSVGDir = "/Users/schoudhury/data/econpapers/ageconsearch.umn.edu/tablesvgs/" //"src/test/resources/svgs/"
+
+  val baseJsonDir = "/home/sagnik/data/nlp-table-data/randjsons/" //"src/test/resources/jsons/"
+  val baseImageDir = "/home/sagnik/data/nlp-table-data/randpngs/" //"src/test/resources/images/"
+*/
+
   val basePDir = "/Users/schoudhury/data/econpapers/ageconsearch.umn.edu/pdfs/" //"src/test/resources/pdfs/"
   val baseSVGDir = "/Users/schoudhury/data/econpapers/ageconsearch.umn.edu/tablesvgs/" //"src/test/resources/svgs/"
 

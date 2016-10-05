@@ -86,38 +86,36 @@ object AllenAIDataConversion extends Logging {
   def isStraightLine(im: PDRasterImage) = (im.bb.x1 isRasterEqualFloat im.bb.x2) || (im.bb.y1 isRasterEqualFloat im.bb.y2) //TODO: a table can have a line
   // that looks like a `/`. To be included later.
 
-  def isWithinFigureTable(im: PDRasterImage, tableBBVals: Seq[Float], pageHeight: Float) = {
-    val rasterBB = Rectangle(
-      im.bb.x1,
-      pageHeight - im.bb.y1,
-      im.bb.x2,
-      pageHeight - im.bb.y2
-    )
-    val tableBB = Rectangle(
-      tableBBVals.head,
-      tableBBVals(1),
-      tableBBVals(2),
-      tableBBVals(3)
-    )
-    //println(s"raster BB: ${im.bb}, table BB: ${tableBB} is inside ${Rectangle.rectInside(rasterBB, tableBB)}")
-    Rectangle.rectInside(rasterBB, tableBB)
-  }
 
-  def isWithinFigureTable(pdSegment: PDSegment, tableBBVals: Seq[Float], pageHeight: Float) = {
-    val segmentBB = Rectangle(
-      pdSegment.bb.x1,
-      pageHeight - pdSegment.bb.y1,
-      pdSegment.bb.x2,
-      pageHeight - pdSegment.bb.y2
-    )
-    val tableBB = Rectangle(
-      tableBBVals.head,
-      tableBBVals(1),
-      tableBBVals(2),
-      tableBBVals(3)
+
+  def isWithinFigureTable[B](pdObject: B, figureTableBBVals: Seq[Float], pageHeight: Float) = {
+    val maxWidth= 10000f
+    val maxHeight = 10000f
+    val objectBB = pdObject match {
+      case pdObject: PDSegment =>
+        Rectangle(
+          pdObject.bb.x1,
+          pageHeight - pdObject.bb.y1,
+          pdObject.bb.x2,
+          pageHeight - pdObject.bb.y2
+        )
+      case pdObject: PDRasterImage =>
+        Rectangle(
+          pdObject.bb.x1,
+          pageHeight - pdObject.bb.y1,
+          pdObject.bb.x2,
+          pageHeight - pdObject.bb.y2
+        )
+      case _ => Rectangle(0f, 0f, maxWidth, maxHeight)
+    }
+    val figureTableBB = Rectangle(
+      figureTableBBVals.head,
+      figureTableBBVals(1),
+      figureTableBBVals(2),
+      figureTableBBVals(3)
     )
     //println(s"path BB: ${segmentBB}, table BB: ${tableBB} is inside ${Rectangle.rectInside(segmentBB,tableBB)}")
-    Rectangle.rectInside(segmentBB, tableBB)
+    Rectangle.rectInside(objectBB, figureTableBB)
   }
 
   def transformPDSegment(pdSegment: PDSegment, bb: Seq[Float], pageHeight: Float): PDSegment = pdSegment match {
@@ -171,10 +169,10 @@ object AllenAIDataConversion extends Logging {
           paths <- simplePage.gPaths
           subPaths <- paths.subPaths
           segments <- subPaths.segments
-          if isStraightLine(segments) && isWithinFigureTable(segments, bb, pageHeight)
+          if isStraightLine(segments) && isWithinFigureTable[PDSegment](segments, bb, pageHeight)
         } yield transformPDSegment(segments, bb, pageHeight)) ++ (for {
           raster <- simplePage.rasters
-          if isStraightLine(raster) && isWithinFigureTable(raster, bb, pageHeight)
+          if isStraightLine(raster) && isWithinFigureTable[PDRasterImage](raster, bb, pageHeight)
         } yield rasterToPDLine(raster, bb, pageHeight)).flatten
       Some(pdSegments)
     case _ => None
@@ -186,13 +184,22 @@ object AllenAIDataConversion extends Logging {
     case Some(simplePage) =>
       val (pageHeight, pageWidth) = (simplePage.bb.y2 - simplePage.bb.y1, simplePage.bb.x2 - simplePage.bb.x1)
       for {
-          paths <- simplePage.gPaths
-          subPaths <- paths.subPaths
-          segments <- subPaths.segments
-          if paths.doPaint && isWithinFigureTable(segments, bb, pageHeight)
-        } yield (transformPDSegment(segments, bb, pageHeight),paths.pathStyle)
+        paths <- simplePage.gPaths
+        subPaths <- paths.subPaths
+        segments <- subPaths.segments
+        if paths.doPaint && isWithinFigureTable[PDSegment](segments, bb, pageHeight)
+      } yield (transformPDSegment(segments, bb, pageHeight),paths.pathStyle)
 
     case _ => Seq.empty[(PDSegment,PathStyle)]
+
+  }
+
+
+  def getPDRastersFigure(smp: Option[PDPageSimple], bb: Seq[Float], pageNumber: Int): Seq[PDRasterImage] = smp match {
+    case Some(simplePage) =>
+      val (pageHeight, pageWidth) = (simplePage.bb.y2 - simplePage.bb.y1, simplePage.bb.x2 - simplePage.bb.x1)
+      simplePage.rasters.filter(raster => isWithinFigureTable[PDRasterImage](raster, bb, pageHeight))
+    case _ => Seq.empty[PDRasterImage]
 
   }
 
@@ -263,7 +270,7 @@ object AllenAIDataConversion extends Logging {
 
     val cvRatio = aFigure.DPI / 72f
     val figureBB = allenAIBoxtoSeq(aFigure.ImageBB)
-    val words = aFigure.ImageText.get
+    val words = aFigure.ImageText.getOrElse(Seq.empty[AllenAIWord])
     val (pageHeight, pageWidth) = getPageHeightWidth(simplePage, aFigure.Page) match {
       case Some((h, w)) => (h, w);
       case _ => (842f, 595f)
@@ -287,14 +294,14 @@ object AllenAIDataConversion extends Logging {
         mention = aFigure.Mention,
         pageNo = aFigure.Page,
         pdSegments = getPDPathsFigure(simplePage, figureBB, aFigure.Page),
-        pdRasters=Seq.empty[PDRasterImage],
+        pdRasters= getPDRastersFigure(simplePage, figureBB, aFigure.Page),
         pageHeight = pageHeight,
         pageWidth = pageWidth,
         dpi = aFigure.DPI,
         id = aFigure.id
       )
     //println(imTable.pdLines)
-    if (csxFigure.pdSegments.nonEmpty) Some(csxFigure)
+    if (csxFigure.pdSegments.nonEmpty || csxFigure.pdRasters.nonEmpty) Some(csxFigure)
     else None
 
   }

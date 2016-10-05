@@ -7,6 +7,7 @@ import java.util.logging.{Level, Logger}
 import edu.psu.sagnik.research.allenaiconversion.AllenAIDataConversion
 import edu.psu.sagnik.research.pdsimplify.impl.ProcessDocument
 import edu.psu.sagnik.research.pdsimplify.path.model._
+import edu.psu.sagnik.research.pdsimplify.raster.model.PDRasterImage
 import edu.psu.sagnik.research.pdsimplify.text.model.PDChar
 import org.allenai.common.Logging
 import org.allenai.pdffigures2.{Box, FigureExtractor, FigureType}
@@ -20,7 +21,8 @@ object CreateSVG extends App with Logging{
   @inline def allenAIBoxtoSeq(b: Box, cvRatio: Float = 1f): Seq[Float] =
     Seq(b.x1.toFloat / cvRatio, b.y1.toFloat / cvRatio, b.x2.toFloat / cvRatio, b.y2.toFloat / cvRatio)
 
-  val pdLoc="/home/sagnik/data/citeseer10000withsvg/10.1.1.67.2476.pdf"
+  //val pdLoc="/home/sagnik/data/citeseer10000withsvg/10.1.1.67.2476.pdf"
+  val pdLoc="/home/sagnik/Downloads/ketwww15.pdf"
 
   val allenAIFigures=AllenAIDataConversion.figureFromPDFFigures2(pdLoc)
   println(s"${allenAIFigures.size} figures created from AllenAI")
@@ -51,7 +53,8 @@ object CreateSVG extends App with Logging{
         csxFigures.flatten.foreach (f =>
           new createSVG()
             .writeSVG (
-              sequence = f.pdSegments.toList,
+              paths = f.pdSegments,
+              rasters = f.pdRasters,
               svgLoc = s"${svgDir.getAbsolutePath}/${pdLoc.split ("/").last.dropRight (4)}-Figure-${f.id}.svg",
               width = f.bb.x2 - f.bb.x1,
               height = f.bb.y2 - f.bb.y1
@@ -64,11 +67,29 @@ object CreateSVG extends App with Logging{
 
 class createSVG extends Logging{
 
-  def getSvgString(p: (PDSegment,PathStyle), w: Float, h: Float): String = "<path d=\"" +
-    PathHelper.segmentToString(p._1,h) + "\" " + PathHelper.getStyleString(p._2) +
-    " />"
+  def getSvgString[A](p: A, pathStyle: Option[PathStyle], w: Float, h: Float): String = p match {
 
-  def writeSVG(sequence: List[(PDSegment,PathStyle)], svgLoc: String, width: Float, height: Float): Unit = {
+    case p:PDSegment =>
+      "<path d=\"" +
+        PathHelper.segmentToString (p) + "\" " + PathHelper.getStyleString (pathStyle.get) +
+        " />"
+
+    case p:PDRasterImage => "<image width=\"" +
+      (p.bb.x2-p.bb.x1) +
+      "\" height=\"" +
+      (p.bb.y2-p.bb.y1) +
+      "\" xlink:href=\"data:image/png;base64," +
+      p.imageDataString +
+      "\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" />"
+
+    case _ => ""
+  }
+
+  def writeSVG(
+                paths: Seq[(PDSegment,PathStyle)],
+                rasters: Seq[PDRasterImage],
+                svgLoc: String, width: Float, height: Float
+              ): Unit = {
     val svgStart = "<?xml version=\"1.0\" standalone=\"no\"?>\n\n<svg height=\"" +
       height +
       "\" width=\"" +
@@ -76,7 +97,8 @@ class createSVG extends Logging{
       "\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\">" +
       "\n"
 
-    val content = sequence.map(x => getSvgString(x, width, height)).mkString("\n")
+    val content = paths.map(x => getSvgString(x._1, Some(x._2),width, height)).mkString("\n") +
+      rasters.map(x => getSvgString(x, None, width, height)).mkString("\n")
     val svgEnd = "\n</svg>"
     import scala.reflect.io.File
     File(svgLoc).writeAll(svgStart + content + svgEnd)

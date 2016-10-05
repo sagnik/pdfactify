@@ -7,21 +7,40 @@ package edu.psu.sagnik.research.figure
 import edu.psu.sagnik.research.pdsimplify.path.model._
 
 object PathHelper {
-  def segmentToString(s: PDSegment, h: Float): String = s match {
+  def segmentToString(s: PDSegment): String = s match {
     case s: PDLine =>
       "M " +
-        s.startPoint.x.toString + "," + (h - s.startPoint.y).toString +
+        s.startPoint.x.toString + "," + s.startPoint.y.toString +
         " L " +
-        s.endPoint.x.toString + "," + (h - s.endPoint.y).toString +
+        s.endPoint.x.toString + "," + s.endPoint.y.toString +
         " "
     case s: PDCurve =>
       "M " +
-        s.startPoint.x.toString + "," + (h - s.startPoint.y).toString +
+        s.startPoint.x.toString + "," + s.startPoint.y.toString +
+        " C " +
+        s.controlPoint1.x.toString + "," + s.controlPoint1.y.toString + " " +
+        s.controlPoint2.x.toString + "," + s.controlPoint2.y.toString + " " +
+        s.endPoint.x.toString + "," + s.endPoint.y.toString
+
+    case _ => ""
+
+  }
+
+  def segmentToString(s: PDSegment, h: Float): String = s match {
+    case s: PDLine =>
+      "M " +
+        s.startPoint.x.toString + "," + (h-s.startPoint.y).toString +
+        " L " +
+        s.endPoint.x.toString + "," + (h- s.endPoint.y).toString +
+        " "
+    case s: PDCurve =>
+      "M " +
+        s.startPoint.x.toString + "," + (h- s.startPoint.y).toString +
         " C " +
         s.controlPoint1.x.toString + "," + (h - s.controlPoint1.y).toString + " " +
         s.controlPoint2.x.toString + "," + (h - s.controlPoint2.y).toString + " " +
-        s.endPoint.x.toString + "," + (h - s.endPoint.y).toString +
-        " "
+        s.endPoint.x.toString + "," + (h - s.endPoint.y).toString
+
     case _ => ""
 
   }

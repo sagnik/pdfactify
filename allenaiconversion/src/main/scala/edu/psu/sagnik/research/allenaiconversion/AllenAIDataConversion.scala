@@ -6,7 +6,7 @@ import java.io.File
 import edu.psu.sagnik.research.pdsimplify.impl.ProcessDocument
 import edu.psu.sagnik.research.pdsimplify.model.PDPageSimple
 import edu.psu.sagnik.research.pdsimplify.path.impl.BB
-import edu.psu.sagnik.research.pdsimplify.path.model.{PDCurve, PDLine, PDSegment}
+import edu.psu.sagnik.research.pdsimplify.path.model.{PDCurve, PDLine, PDSegment, PathStyle}
 import edu.psu.sagnik.research.pdsimplify.raster.model.PDRasterImage
 import org.allenai.common.Logging
 import org.allenai.pdffigures2.{Box, Figure, FigureExtractor, FigureType}
@@ -86,7 +86,7 @@ object AllenAIDataConversion extends Logging {
   def isStraightLine(im: PDRasterImage) = (im.bb.x1 isRasterEqualFloat im.bb.x2) || (im.bb.y1 isRasterEqualFloat im.bb.y2) //TODO: a table can have a line
   // that looks like a `/`. To be included later.
 
-  def isWithinTable(im: PDRasterImage, tableBBVals: Seq[Float], pageHeight: Float) = {
+  def isWithinFigureTable(im: PDRasterImage, tableBBVals: Seq[Float], pageHeight: Float) = {
     val rasterBB = Rectangle(
       im.bb.x1,
       pageHeight - im.bb.y1,
@@ -103,7 +103,7 @@ object AllenAIDataConversion extends Logging {
     Rectangle.rectInside(rasterBB, tableBB)
   }
 
-  def isWithinTable(pdSegment: PDSegment, tableBBVals: Seq[Float], pageHeight: Float) = {
+  def isWithinFigureTable(pdSegment: PDSegment, tableBBVals: Seq[Float], pageHeight: Float) = {
     val segmentBB = Rectangle(
       pdSegment.bb.x1,
       pageHeight - pdSegment.bb.y1,
@@ -129,18 +129,17 @@ object AllenAIDataConversion extends Logging {
         endPoint = endPoint,
         bb = BB.Line(startPoint, endPoint)
       )
-
     case pdSegment: PDCurve =>
       val startPoint = new Point2D.Float(pdSegment.startPoint.x - bb.head, pageHeight - pdSegment.startPoint.y - bb(1))
       val controlPoint1 = new Point2D.Float(pdSegment.controlPoint1.x - bb.head, pageHeight - pdSegment.controlPoint1.y - bb(1))
       val controlPoint2 = new Point2D.Float(pdSegment.controlPoint2.x - bb.head, pageHeight - pdSegment.controlPoint2.y - bb(1))
       val endPoint = new Point2D.Float(pdSegment.endPoint.x - bb.head, pageHeight - pdSegment.endPoint.y - bb(1))
       PDCurve(
-        startPoint = startPoint,
-        controlPoint1 = controlPoint1,
-        controlPoint2 = controlPoint2,
-        endPoint = endPoint,
-        bb = BB.Curve(startPoint, endPoint, controlPoint1, controlPoint2)
+        startPoint=startPoint,
+        endPoint=endPoint,
+        controlPoint1=controlPoint1,
+        controlPoint2=controlPoint2,
+        bb = BB.Curve(startPoint,endPoint,controlPoint1,controlPoint2)
       )
 
   }
@@ -155,14 +154,14 @@ object AllenAIDataConversion extends Logging {
     )
   }
 
-  def transformPDSegment(im: PDRasterImage, bb: Seq[Float], pageHeight: Float) = List(
+  def rasterToPDLine(im: PDRasterImage, bb: Seq[Float], pageHeight: Float) = List(
     pDLinefromPoints(sP = new Point2D.Float(im.bb.x1, im.bb.y1), eP = new Point2D.Float(im.bb.x1, im.bb.y2), bb = bb, pageHeight = pageHeight),
     pDLinefromPoints(sP = new Point2D.Float(im.bb.x1, im.bb.y2), eP = new Point2D.Float(im.bb.x2, im.bb.y2), bb = bb, pageHeight = pageHeight),
     pDLinefromPoints(sP = new Point2D.Float(im.bb.x2, im.bb.y2), eP = new Point2D.Float(im.bb.x2, im.bb.y1), bb = bb, pageHeight = pageHeight),
     pDLinefromPoints(sP = new Point2D.Float(im.bb.x2, im.bb.y1), eP = new Point2D.Float(im.bb.x1, im.bb.y1), bb = bb, pageHeight = pageHeight)
   )
 
-  def getPDLines(smp: Option[PDPageSimple], bb: Seq[Float], pageNumber: Int) = smp match {
+  def getPDLinesTable(smp: Option[PDPageSimple], bb: Seq[Float], pageNumber: Int) = smp match {
 
     //println(s"[straight segments]: ${simplePage.gPaths.flatMap(_.subPaths).flatMap(_.segments).count(isStraightLine(_))}")
     case Some(simplePage) =>
@@ -172,13 +171,28 @@ object AllenAIDataConversion extends Logging {
           paths <- simplePage.gPaths
           subPaths <- paths.subPaths
           segments <- subPaths.segments
-          if isStraightLine(segments) && isWithinTable(segments, bb, pageHeight)
+          if isStraightLine(segments) && isWithinFigureTable(segments, bb, pageHeight)
         } yield transformPDSegment(segments, bb, pageHeight)) ++ (for {
           raster <- simplePage.rasters
-          if isStraightLine(raster) && isWithinTable(raster, bb, pageHeight)
-        } yield transformPDSegment(raster, bb, pageHeight)).flatten
+          if isStraightLine(raster) && isWithinFigureTable(raster, bb, pageHeight)
+        } yield rasterToPDLine(raster, bb, pageHeight)).flatten
       Some(pdSegments)
     case _ => None
+
+  }
+
+  def getPDPathsFigure(smp: Option[PDPageSimple], bb: Seq[Float], pageNumber: Int): Seq[(PDSegment,PathStyle)] = smp match {
+
+    case Some(simplePage) =>
+      val (pageHeight, pageWidth) = (simplePage.bb.y2 - simplePage.bb.y1, simplePage.bb.x2 - simplePage.bb.x1)
+      for {
+          paths <- simplePage.gPaths
+          subPaths <- paths.subPaths
+          segments <- subPaths.segments
+          if paths.doPaint && isWithinFigureTable(segments, bb, pageHeight)
+        } yield (transformPDSegment(segments, bb, pageHeight),paths.pathStyle)
+
+    case _ => Seq.empty[(PDSegment,PathStyle)]
 
   }
 
@@ -232,7 +246,7 @@ object AllenAIDataConversion extends Logging {
         caption = Some(aTable.Caption),
         mention = aTable.Mention,
         pageNo = aTable.Page,
-        pdLines = getPDLines(simplePage, tableBB, aTable.Page) match { case Some(pdLines) => pdLines; case _ => Seq.empty[PDSegment] },
+        pdLines = getPDLinesTable(simplePage, tableBB, aTable.Page) match { case Some(pdLines) => pdLines; case _ => Seq.empty[PDSegment] },
         pageHeight = pageHeight,
         pageWidth = pageWidth,
         dpi = aTable.DPI,
@@ -272,17 +286,15 @@ object AllenAIDataConversion extends Logging {
         caption = Some(aFigure.Caption),
         mention = aFigure.Mention,
         pageNo = aFigure.Page,
-        pdLines = getPDLines(simplePage, figureBB, aFigure.Page) match {
-          case Some(pdLines) => pdLines;
-          case _ => Seq.empty[PDSegment]
-        },
+        pdSegments = getPDPathsFigure(simplePage, figureBB, aFigure.Page),
+        pdRasters=Seq.empty[PDRasterImage],
         pageHeight = pageHeight,
         pageWidth = pageWidth,
         dpi = aFigure.DPI,
         id = aFigure.id
       )
     //println(imTable.pdLines)
-    if (csxFigure.pdLines.nonEmpty) Some(csxFigure)
+    if (csxFigure.pdSegments.nonEmpty) Some(csxFigure)
     else None
 
   }

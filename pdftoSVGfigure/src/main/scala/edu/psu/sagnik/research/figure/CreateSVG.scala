@@ -49,12 +49,12 @@ object CreateSVG extends App with Logging{
       }
       if (dirResult) {
         csxFigures.flatten.foreach (f =>
-          new createSVG[PDSegment] ()
+          new createSVG()
             .writeSVG (
-              sequence = f.pdLines.toList,
-              svgLoc = s"${svgDir.getAbsolutePath}/${pdLoc.split ("/").last.dropRight (4)}${f.id}.svg",
+              sequence = f.pdSegments.toList,
+              svgLoc = s"${svgDir.getAbsolutePath}/${pdLoc.split ("/").last.dropRight (4)}-Figure-${f.id}.svg",
               width = f.bb.x2 - f.bb.x1,
-              height = f.bb.y2 - f.bb.x1
+              height = f.bb.y2 - f.bb.y1
             )
         )
       }
@@ -62,14 +62,13 @@ object CreateSVG extends App with Logging{
   }
 }
 
-class createSVG[A] extends Logging{
+class createSVG extends Logging{
 
-  def getSvgString(p: A, w: Float, h: Float): String = p match {
-    case p: PDPath => "<path " + PathHelper.getPathDString(p, h) + " " + PathHelper.getStyleString(p.pathStyle) + " />"
-    case _ => ""
-  }
+  def getSvgString(p: (PDSegment,PathStyle), w: Float, h: Float): String = "<path d=\"" +
+    PathHelper.segmentToString(p._1,h) + "\" " + PathHelper.getStyleString(p._2) +
+    " />"
 
-  def writeSVG(sequence: List[A], svgLoc: String, width: Float, height: Float): Unit = {
+  def writeSVG(sequence: List[(PDSegment,PathStyle)], svgLoc: String, width: Float, height: Float): Unit = {
     val svgStart = "<?xml version=\"1.0\" standalone=\"no\"?>\n\n<svg height=\"" +
       height +
       "\" width=\"" +
@@ -77,21 +76,12 @@ class createSVG[A] extends Logging{
       "\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\">" +
       "\n"
 
-    val first = sequence.headOption
-    first match {
-      case Some(first) =>
-        val content = first match {
-          case first: PDPath => sequence.map(x => getSvgString(x, width, height)).mkString("\n")
-          //case first: PDChar => sequence.map(x => getSvgString(x, width, height)).foldLeft("")((a, b) => a + "\n" + b) + "\n"
-          case _ => logger.info(s"${first.getClass}"); ???
-
-        }
-        val svgEnd = "\n</svg>"
-        import scala.reflect.io.File
-        File(svgLoc).writeAll(svgStart + content + svgEnd)
-        println(s"written SVG at ${svgLoc}")
-      case _ => {}
-    }
+    val content = sequence.map(x => getSvgString(x, width, height)).mkString("\n")
+    val svgEnd = "\n</svg>"
+    import scala.reflect.io.File
+    File(svgLoc).writeAll(svgStart + content + svgEnd)
+    println(s"written SVG at ${svgLoc}")
   }
 }
+
 

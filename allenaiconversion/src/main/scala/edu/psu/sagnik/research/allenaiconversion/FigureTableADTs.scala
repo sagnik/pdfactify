@@ -1,6 +1,7 @@
 package edu.psu.sagnik.research.allenaiconversion
 
-import edu.psu.sagnik.research.pdsimplify.path.model.PDSegment
+import edu.psu.sagnik.research.pdsimplify.path.model.{PDPath, PDSegment, PathStyle}
+import edu.psu.sagnik.research.pdsimplify.raster.model.PDRasterImage
 import org.allenai.pdffigures2.Box
 
 /**
@@ -52,7 +53,8 @@ case class CiteSeerXFigure(
                             caption: Option[String],
                             mention: Option[String],
                             pageNo: Int,
-                            pdLines: Seq[PDSegment],
+                            pdSegments: Seq[(PDSegment,PathStyle)],
+                            pdRasters: Seq[PDRasterImage],
                             pageHeight: Float,
                             pageWidth: Float,
                             dpi: Int,

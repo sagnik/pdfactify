@@ -75,7 +75,7 @@ class TableSVGTest extends FunSpec {
             "\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\">" +
             "\n"
 
-          val content = pdLines.map(x => getSvgString[PDSegment](x)).foldLeft("")((a, b) => a + "\n" + b) + "\n"
+          val content = pdLines.map(x => getSvgString[PDSegment](x)).mkString("\n")
 
           val svgEnd = "\n</svg>"
           File(DataLocation.svgLoc).writeAll(svgStart + content + svgEnd)

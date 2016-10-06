@@ -37,11 +37,8 @@ object AllenAIDataConversion extends Logging {
   implicit val formats = org.json4s.DefaultFormats
   def jsonToCaseClasses(jsonStr: String): AllenAITable = parse(jsonStr).extract[AllenAITable] //for test
 
-  lazy val tableFromPDFFigures2= (pdLoc: String) => {
-    val doc = PDDocument.load(new File(pdLoc))
-    val figureExtractor = FigureExtractor()
-    val document = figureExtractor.getFiguresWithText(doc)
-    document.figures.filter(_.figType == FigureType.Table).map(t =>
+  lazy val tableFromPDFFigures2= (document: FigureExtractor.DocumentWithRasterizedFigures) => {
+    document.figures.map(_.figure).filter(_.figType == FigureType.Table).map(t =>
       AllenAITable(
         Caption = t.caption,
         Page = t.page,
@@ -55,11 +52,8 @@ object AllenAIDataConversion extends Logging {
 
   }
 
-  lazy val figureFromPDFFigures2 = (pdLoc: String) => {
-    val doc = PDDocument.load(new File(pdLoc))
-    val figureExtractor = FigureExtractor()
-    val document = figureExtractor.getFiguresWithText(doc)
-    document.figures.filter(_.figType == FigureType.Figure).map(t =>
+  lazy val figureFromPDFFigures2 = (document: FigureExtractor.DocumentWithRasterizedFigures) => {
+    document.figures.map(_.figure).filter(_.figType == FigureType.Figure).map(t =>
       AllenAIFigure(
         Caption = t.caption,
         Page = t.page,

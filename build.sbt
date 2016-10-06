@@ -26,7 +26,7 @@ lazy val root = project
   .aggregate(
     pdffigures,
     allenaiconversion,
-    pdftoSVGfigure,
+    figuretableextractionSVG,
     pdftabletorelationaltriple
  )
   .settings(publishArtifact := false)
@@ -40,8 +40,8 @@ lazy val allenaiconversion = project
   .dependsOn(pdffigures)
   .settings(publishArtifact := false)
 
-lazy val pdftoSVGfigure = project
-    .in(file("pdftoSVGfigure"))
+lazy val figuretableextractionSVG = project
+  .in(file("figuretableextractionSVG"))
   .dependsOn(allenaiconversion)
   .settings(publishArtifact := false)
 

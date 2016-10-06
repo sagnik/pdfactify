@@ -1,6 +1,6 @@
 organization := "edu.psu.sagnik.research"
 
-name := "pdftoSVGfigure"
+name := "figuretableextractionSVG"
 
 javacOptions += "-Xlint:unchecked"
 

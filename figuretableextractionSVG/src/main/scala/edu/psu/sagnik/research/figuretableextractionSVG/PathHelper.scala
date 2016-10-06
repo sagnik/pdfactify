@@ -1,4 +1,4 @@
-package edu.psu.sagnik.research.figure
+package edu.psu.sagnik.research.figuretableextractionSVG
 
 /**
   * Created by sagnik on 10/1/16.

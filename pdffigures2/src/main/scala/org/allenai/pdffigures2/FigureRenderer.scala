@@ -123,6 +123,7 @@ object FigureRenderer {
     figuresAndFilenames.map {
       case (filename, rasterizedFigure) =>
         ImageIO.write(rasterizedFigure.bufferedImage, format, new File(filename))
+        println (s"created PNG at $filename")
         SavedFigure(rasterizedFigure, filename)
     }
   }
@@ -163,6 +164,7 @@ object FigureRenderer {
     val file = new File(outputFilename)
     val writer = new PrintWriter(file)
     writer.write(toSave.toJson.prettyPrint)
+    println(s"created JSON at $outputFilename")
     writer.close()
   }
 }

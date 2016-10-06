@@ -7,6 +7,7 @@ import edu.psu.sagnik.research.pdsimplify.impl.ProcessDocument
 import edu.psu.sagnik.research.table.tablecellextraction.{CellRenaming, CombineWords}
 import edu.psu.sagnik.research.table.tripleextraction.TabletoWFT
 import org.allenai.common.Logging
+import org.allenai.pdffigures2.FigureExtractor
 import org.apache.pdfbox.pdmodel.PDDocument
 
 import scala.concurrent.Future
@@ -28,7 +29,11 @@ object HeaderPaths extends Logging {
     pdDoc.close()
     simpleDocument match {
       case Some(doc) =>
-        val myTables = AllenAIDataConversion.tableFromPDFFigures2 (pdfLoc)
+        val figureExtractor = FigureExtractor()
+        //create rasterized figures anyway
+        val allenAIDoc = figureExtractor.getRasterizedFiguresWithText(PDDocument.load(new File(pdfLoc)),dpi=72)
+
+        val myTables = AllenAIDataConversion.tableFromPDFFigures2 (allenAIDoc)
           .map (
             atable => AllenAIDataConversion.allenAITableToMyTable (atable, Some (doc.pages(atable.Page)) )
           )

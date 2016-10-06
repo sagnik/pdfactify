@@ -120,6 +120,15 @@ object FigureExtractorBatchCli extends Logging {
     }
   }
 
+  def getFilenames(dir: String, docName: String,
+                   figures: Seq[Figure]): Seq[String] = {
+    figures.map { fig =>
+      val figureName = s"${fig.figType}-${fig.id}"
+      val filename = s"$dir/$docName-$figureName.png"
+      filename
+    }
+  }
+
   def getFilenames(prefix: String, docName: String, format: String,
     figures: Seq[Figure]): Seq[String] = {
     val namesUsed = scala.collection.mutable.Map[String, Int]()
@@ -132,9 +141,16 @@ object FigureExtractorBatchCli extends Logging {
     }
   }
 
+  def saveRasterizedFigures(dir: String, docName: String, dpi: Int,
+                            figures: Seq[RasterizedFigure], doc: PDDocument): Seq[SavedFigure] = {
+    val filenames = getFilenames(dir, docName, figures.map(_.figure))
+    FigureRenderer.saveRasterizedFigures(filenames.zip(figures), "png", dpi)
+  }
+
   def saveRasterizedFigures(prefix: String, docName: String, format: String, dpi: Int,
     figures: Seq[RasterizedFigure], doc: PDDocument): Seq[SavedFigure] = {
     val filenames = getFilenames(prefix, docName, format, figures.map(_.figure))
+    println(filenames)
     FigureRenderer.saveRasterizedFigures(filenames.zip(figures), format, dpi)
   }
 

@@ -50,18 +50,18 @@ case class RasterizedFigure(figure: Figure, imageRegion: Box,
 object SavedFigure {
   def apply(figure: RasterizedFigure, renderUrl: String): SavedFigure = {
     val fig = figure.figure
-    SavedFigure(fig.name, fig.figType, fig.page, fig.caption, fig.imageText.map(_.text),
+    SavedFigure(fig.name, fig.figType, fig.page, fig.caption, fig.imageText,
       fig.captionBoundary, figure.imageRegion.scale(72.0 / figure.dpi), renderUrl, figure.dpi)
   }
   def apply(figure: Figure, renderUrl: String, renderDpi: Int): SavedFigure = {
-    SavedFigure(figure.name, figure.figType, figure.page, figure.caption, figure.imageText.map(_.text),
+    SavedFigure(figure.name, figure.figType, figure.page, figure.caption, figure.imageText,
       figure.captionBoundary, figure.regionBoundary, renderUrl, renderDpi)
   }
 }
 
 /** Figure that has been saved to a given URL */
 case class SavedFigure(name: String, figType: FigureType, page: Int, caption: String,
-  imageText: Seq[String], captionBoundary: Box, regionBoundary: Box, renderURL: String,
+  imageText: Seq[WordwithBB], captionBoundary: Box, regionBoundary: Box, renderURL: String,
   renderDpi: Int)
 
 case class FiguresInDocument(figures: Seq[Figure], failedCaptions: Seq[Caption])

@@ -8,7 +8,7 @@ import org.allenai.common.Logging
 import org.allenai.pdffigures2.FigureExtractor.DocumentWithSavedFigures
 import org.allenai.pdffigures2.JsonProtocol._
 import org.apache.pdfbox.pdmodel.PDDocument
-import org.slf4j.LoggerFactory
+//import org.slf4j.LoggerFactory
 
 import scala.collection.parallel.ForkJoinTaskSupport
 
@@ -255,10 +255,12 @@ object FigureExtractorBatchCli extends Logging {
 
   def run(config: CliConfigBatch): Unit = {
     val startTime = System.nanoTime()
+    /*
     if (!config.debugLogging) {
       val root = LoggerFactory.getLogger("root").asInstanceOf[Logger]
       root.setLevel(Level.INFO)
     }
+    */
     val results = if (config.threads == 1) {
       config.inputFiles.zipWithIndex.map {
         case (inputFile, fileNum) =>

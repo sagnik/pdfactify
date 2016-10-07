@@ -22,7 +22,7 @@ libraryDependencies ++= Seq(
   "io.spray" %% "spray-json" % "1.3.2",
   "com.github.scopt" %% "scopt" % "3.4.0",
   "ch.qos.logback" % "logback-classic" % "1.1.7",
-  "org.slf4j" % "jcl-over-slf4j" % "1.7.21",
+  //"org.slf4j" % "jcl-over-slf4j" % "1.7.21",
   "org.apache.pdfbox" % "pdfbox" % "2.0.2",
   "org.apache.pdfbox" % "fontbox" % "2.0.2",
   "com.typesafe" % "config" % "1.3.0",

@@ -18,7 +18,7 @@ import org.apache.pdfbox.pdmodel.PDDocument
 import scala.util.{Failure, Success, Try}
 
 
-object CreateFigureTables extends App with Logging{
+object CreateFigureTables extends Logging{
 
   @inline def allenAIBoxtoSeq(b: Box, cvRatio: Float = 1f): Seq[Float] =
     Seq(b.x1.toFloat / cvRatio, b.y1.toFloat / cvRatio, b.x2.toFloat / cvRatio, b.y2.toFloat / cvRatio)
@@ -28,12 +28,12 @@ object CreateFigureTables extends App with Logging{
 
     val truncatedName = pdLoc.substring(0, pdLoc.lastIndexOf('.'))
 
-    import org.apache.commons.io.FileUtils
+    //import org.apache.commons.io.FileUtils
 
     val svgDir = new File(truncatedName)
     if (! svgDir.exists) svgDir.mkdir
     else {
-      FileUtils.deleteDirectory (svgDir)
+      svgDir.delete()
       println(s"directory $truncatedName existed. Deleting and recreating.")
       svgDir.mkdir
     }
@@ -128,12 +128,12 @@ object CreateFigureTables extends App with Logging{
 
 
               case _ =>
-                println(s"Could not create SVG figures for ${
-                  pdLoc
-                } because pdSimplify failed")
+                println(s"Could not create SVG figures for ${pdLoc} because pdSimplify failed")
 
             }
-          case _ => println(s"Figure extraction from AllenAI failed")
+          case _ =>
+            println(s"Figure extraction from AllenAI failed")
+            doc.close()
         }
       case _ => println(s"PDF document could not be loaded")
     }
@@ -151,11 +151,14 @@ object CreateFigureTables extends App with Logging{
     val pdFiles = recursiveListFiles(new File(dirLoc),".pdf"r)
     pdFiles.foreach{x=>println(s"processing ${x.getAbsolutePath}");singlePDF(x.getAbsolutePath)}
   }
-  //val pdLoc="/home/sagnik/data/citeseer10000withsvg/10.1.1.67.2476.pdf"
-  //val pdLoc="/home/sagnik/Downloads/ketwww15.pdf"
-  //val dirLoc="/home/sagnik/data/citeseer10000withsvg/"
-  val dirLoc = "/home/sagnik/data/nlp-table-data/pdfs/"
-  batch(dirLoc)
+
+  def main(args: Array[String]): Unit = {
+    val pdLoc=args.headOption.getOrElse("/home/sagnik/data/citeseer10000withsvg/10.1.1.67.2476.pdf")
+    //val pdLoc="/home/sagnik/Downloads/ketwww15.pdf"
+    //val dirLoc="/home/sagnik/data/citeseer10000withsvg/"
+    //val dirLoc = "/home/sagnik/data/nlp-table-data/pdfs/"
+    singlePDF(pdLoc)
+  }
 
 }
 

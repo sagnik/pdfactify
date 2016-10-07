@@ -153,7 +153,7 @@ object CreateFigureTables extends Logging{
   }
 
   def main(args: Array[String]): Unit = {
-    val pdLoc=args.headOption.getOrElse("/home/sagnik/data/citeseer10000withsvg/10.1.1.67.2476.pdf")
+    val pdLoc=args.headOption.getOrElse("/home/sagnik/data/citeseer10000withsvg/10.1.1.97.8032.pdf")
     //val pdLoc="/home/sagnik/Downloads/ketwww15.pdf"
     //val dirLoc="/home/sagnik/data/citeseer10000withsvg/"
     //val dirLoc = "/home/sagnik/data/nlp-table-data/pdfs/"

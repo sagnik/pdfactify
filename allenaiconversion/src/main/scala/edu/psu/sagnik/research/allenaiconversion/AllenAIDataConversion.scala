@@ -173,6 +173,14 @@ object AllenAIDataConversion extends Logging {
 
   }
 
+  //because we are converting things to atomic SVG, doesn't make much sense to keep the fill color. Let's change that
+  //to stroke color.
+
+  lazy val changeFills = (pStyle: PathStyle) => {
+    if ("none".equals(pStyle.fill.getOrElse("none"))) pStyle
+    else pStyle.copy(stroke = Some(pStyle.fill.get))
+  }
+
   def getPDPathsFigure(smp: Option[PDPageSimple], bb: Seq[Float], pageNumber: Int): Seq[(PDSegment,PathStyle)] = smp match {
 
     case Some(simplePage) =>
@@ -182,7 +190,7 @@ object AllenAIDataConversion extends Logging {
         subPaths <- paths.subPaths
         segments <- subPaths.segments
         if paths.doPaint && isWithinFigureTable[PDSegment](segments, bb, pageHeight)
-      } yield (transformPDSegment(segments, bb, pageHeight),paths.pathStyle)
+      } yield (transformPDSegment(segments, bb, pageHeight),changeFills(paths.pathStyle))
 
     case _ => Seq.empty[(PDSegment,PathStyle)]
 

@@ -38,78 +38,124 @@ object CreateFigureTables extends App with Logging{
       svgDir.mkdir
     }
 
-    val doc = PDDocument.load(new File(pdLoc))
-    val figureExtractor = FigureExtractor()
-
-    //create rasterized figures and save them
-    val allenAIDoc = figureExtractor.getRasterizedFiguresWithText(doc, dpi = 72)
-
-
-    val savedFigures = FigureExtractorBatchCli.saveRasterizedFigures(
-      dir=s"$truncatedName",
-      docName=s"${truncatedName.split("/").last}",
-      dpi=72,
-      figures=allenAIDoc.figures,
-      doc=doc
-    )
-    val documentWithFigures = DocumentWithSavedFigures(savedFigures, allenAIDoc.abstractText, allenAIDoc.sections)
-    val outputFilename = s"$truncatedName/${truncatedName.split("/").last}.json"
-
-    import org.allenai.pdffigures2.JsonProtocol._
-    FigureRenderer.saveAsJSON(outputFilename, documentWithFigures)
-
-    val allenAIFigures = AllenAIDataConversion.figureFromPDFFigures2(allenAIDoc)
-    val allenAITables = AllenAIDataConversion.tableFromPDFFigures2(allenAIDoc)
-
-
-    println(s"${allenAIFigures.size} figures and ${allenAITables.size} tables created from AllenAI")
-
-
-    val pdDoc = PDDocument.load(new File(pdLoc))
-    val simpleDocument = Try(ProcessDocument(pdDoc)) match {
-      case Success(document) => Some(document);
+    val doc = Try(PDDocument.load(new File(pdLoc))) match{
+      case Success(doc) => Some(doc)
       case Failure(e) => {
-        System.err.println(s"[PDSimplify failed]: ${e.getMessage}")
+        System.err.println(s"[AllenAI Figure Extraction failed]: ${e.getMessage}")
         None
       }
     }
-    pdDoc.close()
+    doc match {
 
-    simpleDocument match {
       case Some(doc) =>
-        val csxFigures = allenAIFigures.map { x => AllenAIDataConversion.allenAIFigureToMyFigure(x, Some(doc.pages(x.Page))) }
-        val csxTables = allenAITables.map { x => AllenAIDataConversion.allenAITableToMyTable(x, Some(doc.pages(x.Page))) }
-        println(s"${csxFigures.size} figures and ${csxTables.size} tables created for CiteSeerX")
-        csxFigures.flatten.foreach(f =>
-          new createSVG()
-            .writeSVG(
-              paths = f.pdSegments,
-              rasters = f.pdRasters,
-              svgLoc = s"${svgDir.getAbsolutePath}/${pdLoc.split("/").last.dropRight(4)}-Figure-${f.id}.svg",
-              width = f.bb.x2 - f.bb.x1,
-              height = f.bb.y2 - f.bb.y1
+        val figureExtractor = FigureExtractor()
+
+        //create rasterized figures and save them
+        val allenAIDoc = Try(figureExtractor.getRasterizedFiguresWithText(doc, dpi = 72)) match {
+          case Success(doc) => Some(doc)
+          case Failure(e) => {
+            System.err.println(s"[AllenAI Figure Extraction failed]: ${e.getMessage}")
+            None
+          }
+        }
+
+
+        allenAIDoc match {
+          case Some(allenAIDoc) =>
+
+            val savedFigures = FigureExtractorBatchCli.saveRasterizedFigures(
+              dir = s"$truncatedName",
+              docName = s"${truncatedName.split("/").last}",
+              dpi = 72,
+              figures = allenAIDoc.figures,
+              doc = doc
             )
-        )
-        csxTables.flatten.foreach(f =>
-          new createSVG()
-            .writeSVG(
-              paths = f.pdLines,
-              svgLoc = s"${svgDir.getAbsolutePath}/${pdLoc.split("/").last.dropRight(4)}-Table-${f.id}.svg",
-              width = f.bb.x2 - f.bb.x1,
-              height = f.bb.y2 - f.bb.y1
-            )
-        )
+            val documentWithFigures = DocumentWithSavedFigures(savedFigures, allenAIDoc.abstractText, allenAIDoc.sections)
+            val outputFilename = s"$truncatedName/${
+              truncatedName.split("/").last
+            }.json"
+
+            import org.allenai.pdffigures2.JsonProtocol._
+            FigureRenderer.saveAsJSON(outputFilename, documentWithFigures)
+
+            val allenAIFigures = AllenAIDataConversion.figureFromPDFFigures2(allenAIDoc)
+            val allenAITables = AllenAIDataConversion.tableFromPDFFigures2(allenAIDoc)
 
 
-      case _ =>
-        println(s"Could not create directory for ${pdLoc}")
+            println(s"${allenAIFigures.size} figures and ${allenAITables.size} tables created from AllenAI")
 
+
+            val pdDoc = PDDocument.load(new File(pdLoc))
+            val simpleDocument = Try(ProcessDocument(pdDoc)) match {
+              case Success(document) => Some(document);
+              case Failure(e) => {
+                System.err.println(s"[PDSimplify failed]: ${
+                  e.getMessage
+                }")
+                None
+              }
+            }
+            pdDoc.close()
+
+            simpleDocument match {
+              case Some(doc) =>
+                val csxFigures = allenAIFigures.map {
+                  x => AllenAIDataConversion.allenAIFigureToMyFigure(x, Some(doc.pages(x.Page)))
+                }
+                val csxTables = allenAITables.map {
+                  x => AllenAIDataConversion.allenAITableToMyTable(x, Some(doc.pages(x.Page)))
+                }
+                println(s"${csxFigures.size} figures and ${csxTables.size} tables created for CiteSeerX")
+                csxFigures.flatten.foreach(f =>
+                  new createSVG()
+                    .writeSVG(
+                      paths = f.pdSegments,
+                      rasters = f.pdRasters,
+                      svgLoc = s"${svgDir.getAbsolutePath}/${pdLoc.split("/").last.dropRight(4)}-Figure-${f.id}.svg",
+                      width = f.bb.x2 - f.bb.x1,
+                      height = f.bb.y2 - f.bb.y1
+                    )
+                )
+                csxTables.flatten.foreach(f =>
+                  new createSVG()
+                    .writeSVG(
+                      paths = f.pdLines,
+                      svgLoc = s"${svgDir.getAbsolutePath}/${pdLoc.split("/").last.dropRight(4)}-Table-${f.id}.svg",
+                      width = f.bb.x2 - f.bb.x1,
+                      height = f.bb.y2 - f.bb.y1
+                    )
+                )
+
+
+              case _ =>
+                println(s"Could not create SVG figures for ${
+                  pdLoc
+                } because pdSimplify failed")
+
+            }
+          case _ => println(s"Figure extraction from AllenAI failed")
+        }
+      case _ => println(s"PDF document could not be loaded")
     }
   }
 
+  import scala.util.matching.Regex
+  def recursiveListFiles(f: File, r: Regex): Array[File] = {
+    val these = f.listFiles
+    val good = these.filter(f => r.findFirstIn(f.getName).isDefined)
+    good ++ these.filter(_.isDirectory).flatMap(recursiveListFiles(_, r))
+  }
+
+  import scala.language.postfixOps
+  def batch(dirLoc:String):Unit={
+    val pdFiles = recursiveListFiles(new File(dirLoc),".pdf"r)
+    pdFiles.foreach{x=>println(s"processing ${x.getAbsolutePath}");singlePDF(x.getAbsolutePath)}
+  }
   //val pdLoc="/home/sagnik/data/citeseer10000withsvg/10.1.1.67.2476.pdf"
-  val pdLoc="/home/sagnik/Downloads/ketwww15.pdf"
-  singlePDF(pdLoc)
+  //val pdLoc="/home/sagnik/Downloads/ketwww15.pdf"
+  //val dirLoc="/home/sagnik/data/citeseer10000withsvg/"
+  val dirLoc = "/home/sagnik/data/nlp-table-data/pdfs/"
+  batch(dirLoc)
 
 }
 

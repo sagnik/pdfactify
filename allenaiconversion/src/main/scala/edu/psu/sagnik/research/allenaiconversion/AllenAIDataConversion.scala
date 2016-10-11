@@ -200,7 +200,10 @@ object AllenAIDataConversion extends Logging {
   def getPDRastersFigure(smp: Option[PDPageSimple], bb: Seq[Float], pageNumber: Int): Seq[PDRasterImage] = smp match {
     case Some(simplePage) =>
       val (pageHeight, pageWidth) = (simplePage.bb.y2 - simplePage.bb.y1, simplePage.bb.x2 - simplePage.bb.x1)
-      simplePage.rasters.filter(raster => isWithinFigureTable[PDRasterImage](raster, bb, pageHeight))
+      simplePage
+        .rasters
+        .filter(raster => isWithinFigureTable[PDRasterImage](raster, bb, pageHeight))
+
     case _ => Seq.empty[PDRasterImage]
 
   }

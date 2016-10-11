@@ -10,7 +10,7 @@ libraryDependencies ++= Seq(
   //commons io for file writing
   //"commons-io" % "commons-io" % "2.4",
   //pdfparser for graphics paths
-  "edu.psu.sagnik.research" %% "pdsimplifyparser" % "0.0.6" exclude("javax.jms", "jms") exclude("com.sun.jdmk", "jmxtools") exclude("com.sun.jmx", "jmxri"),
+  "edu.psu.sagnik.research" %% "pdsimplifyparser" % "0.0.9" exclude("javax.jms", "jms") exclude("com.sun.jdmk", "jmxtools") exclude("com.sun.jmx", "jmxri"),
   //for test
   "org.scalatest"  % "scalatest_2.11"             % "2.2.1"   % "test" withSources() withJavadoc(),
   "org.scalacheck" %% "scalacheck"                % "1.12.1"  % "test" withSources() withJavadoc()

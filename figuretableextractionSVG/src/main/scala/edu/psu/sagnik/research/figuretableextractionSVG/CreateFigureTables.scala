@@ -112,8 +112,9 @@ object CreateFigureTables extends Logging{
                       paths = f.pdSegments,
                       rasters = f.pdRasters,
                       svgLoc = s"${svgDir.getAbsolutePath}/${pdLoc.split("/").last.dropRight(4)}-Figure-${f.id}.svg",
-                      width = f.bb.x2 - f.bb.x1,
-                      height = f.bb.y2 - f.bb.y1
+                      svgWidth = f.bb.x2 - f.bb.x1,
+                      svgHeight = f.bb.y2 - f.bb.y1,
+                      pageHeight = f.pageHeight
                     )
                 )
                 csxTables.flatten.foreach(f =>
@@ -121,8 +122,9 @@ object CreateFigureTables extends Logging{
                     .writeSVG(
                       paths = f.pdLines,
                       svgLoc = s"${svgDir.getAbsolutePath}/${pdLoc.split("/").last.dropRight(4)}-Table-${f.id}.svg",
-                      width = f.bb.x2 - f.bb.x1,
-                      height = f.bb.y2 - f.bb.y1
+                      svgWidth = f.bb.x2 - f.bb.x1,
+                      svgHeight = f.bb.y2 - f.bb.y1,
+                      pageHeight = f.pageHeight
                     )
                 )
 
@@ -153,7 +155,7 @@ object CreateFigureTables extends Logging{
   }
 
   def main(args: Array[String]): Unit = {
-    val pdLoc=args.headOption.getOrElse("/home/sagnik/data/citeseer10000withsvg/10.1.1.97.8032.pdf")
+    val pdLoc=args.headOption.getOrElse("/home/sagnik/data/citeseer10000withsvg/10.1.1.304.9568.pdf")
     //val pdLoc="/home/sagnik/Downloads/ketwww15.pdf"
     //val dirLoc="/home/sagnik/data/citeseer10000withsvg/"
     //val dirLoc = "/home/sagnik/data/nlp-table-data/pdfs/"
@@ -164,14 +166,15 @@ object CreateFigureTables extends Logging{
 
 class createSVG extends Logging{
 
-  def getSvgString[A](p: A, pathStyle: Option[PathStyle], w: Float, h: Float): String = p match {
+  def getSvgString[A](p: A, pathStyle: Option[PathStyle], pageHeight: Float): String = p match {
 
     case p:PDSegment =>
       "<path d=\"" +
         PathHelper.segmentToString (p) + "\" " + PathHelper.getStyleString (pathStyle) +
         " />"
 
-    case p:PDRasterImage => "<image width=\"" +
+    case p:PDRasterImage => "<image " +
+      "width=\"" +
       (p.bb.x2-p.bb.x1) +
       "\" height=\"" +
       (p.bb.y2-p.bb.y1) +
@@ -182,15 +185,15 @@ class createSVG extends Logging{
     case _ => ""
   }
 
-  def writeSVG(paths: Seq[PDSegment],svgLoc: String, width: Float, height: Float): Unit = {
+  def writeSVG(paths: Seq[PDSegment], svgLoc: String, svgWidth: Float, svgHeight: Float, pageHeight: Float): Unit = {
     val svgStart = "<?xml version=\"1.0\" standalone=\"no\"?>\n\n<svg height=\"" +
-      height +
+      svgHeight +
       "\" width=\"" +
-      width +
+      svgWidth +
       "\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\">" +
       "\n"
 
-    val content = paths.map(x => getSvgString(x, None,width, height)).mkString("\n")
+    val content = paths.map(x => getSvgString(x, None,pageHeight)).mkString("\n")
     val svgEnd = "\n</svg>"
     import scala.reflect.io.File
     File(svgLoc).writeAll(svgStart + content + svgEnd)
@@ -199,17 +202,17 @@ class createSVG extends Logging{
 
   def writeSVG(
                 paths: Seq[(PDSegment,PathStyle)], rasters: Seq[PDRasterImage],
-                svgLoc: String, width: Float, height: Float
+                svgLoc: String, svgWidth: Float, svgHeight: Float, pageHeight:Float
               ): Unit = {
     val svgStart = "<?xml version=\"1.0\" standalone=\"no\"?>\n\n<svg height=\"" +
-      height +
+      svgHeight +
       "\" width=\"" +
-      width +
+      svgWidth +
       "\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\">" +
       "\n"
 
-    val content = paths.map(x => getSvgString(x._1, Some(x._2),width, height)).mkString("\n") +
-      rasters.map(x => getSvgString(x, None, width, height)).mkString("\n")
+    val content = paths.map(x => getSvgString(x._1, Some(x._2),pageHeight)).mkString("\n") +
+      rasters.map(x => getSvgString(x, None,pageHeight)).mkString("\n")
     val svgEnd = "\n</svg>"
     import scala.reflect.io.File
     File(svgLoc).writeAll(svgStart + content + svgEnd)

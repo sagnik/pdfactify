@@ -51,7 +51,7 @@ object JSONFormatter {
                 )
               })
       )
-    compact(render(jsoncontent))
+    pretty(render(jsoncontent))
   }
 
 }

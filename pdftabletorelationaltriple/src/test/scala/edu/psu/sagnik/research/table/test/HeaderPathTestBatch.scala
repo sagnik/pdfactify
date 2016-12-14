@@ -22,41 +22,54 @@ class HeaderPathTestBatch extends FunSpec {
     }
   }
 
-  def RowHeaderPathTest(jsonLoc: String): Unit = {
+  def RowHeaderPathTest(jsonLoc: String, pdfLoc:String): Unit = {
     val mytable = AllenAIDataConversion.
       allenAITableToMyTable(
         AllenAIDataConversion.jsonToCaseClasses(
           AllenAIDataConversion.jsonToString(jsonLoc)
-        ), DataLocation.pdfLoc
+        ), pdfLoc
       )
-    implicit val formats = org.json4s.DefaultFormats
     mytable match {
-      case Some(propertable) => {
-        val interimtable = CombineWords.wordMergedTable(propertable)
-        val table = CellRenaming.produceRowColNumbers(interimtable)
-        if (table.cells.length != interimtable.textSegments.length)
-          println("progressing with possible errors")
+      case Some(properTable) => {
+        val interimTable = CombineWords.wordMergedTable(properTable)
+        val table = CellRenaming.produceRowColNumbers(interimTable)
+        //table.cells.foreach{x=>println(x.tg.content,x.startRow,x.startCol)}
+        val wftJsonLoc =
+          if (table.cells.length != interimTable.textSegments.length)
+          //println(s"high error probability: ${table.cells.length}, ${interimtable.textSegments.length}")
+            jsonLoc.substring(0, jsonLoc.length - 5) + "-wft-err.json"
+          else
+            jsonLoc.substring(0, jsonLoc.length - 5) + "-wft.json"
+
         TabletoWFT.headerPathstoDataCells(table) match {
-          case Some(wft) => {
-            scala.tools.nsc.io.File(jsonLoc.substring(0, jsonLoc.length - 5) + "-wft.json")
-              .writeAll(JSONFormatter.wftToJsonString(wft))
-          }
+          case Some(wft) => scala.tools.nsc.io.File(wftJsonLoc).writeAll(JSONFormatter.wftToJsonString(wft))
+
           case None => println("Could not convert given table to a well formed table")
         }
       }
-      case None => println("Failed to generate AllenAI table")
+      case None => println(s"could not get table for $jsonLoc")
     }
-
   }
+
   describe("testing if row column prediction is correct") {
     it("should print the rows and cols from a table") {
+      val baseDir="/media/sagnik/OS_Install/data/nlp-table-data"
+      val basePDFDir = s"$baseDir/pdfs"
+
       //first delete all existing wft jsons.
-      DataLocation.recursiveListFiles(new File("/home/sagnik/data/nlp-table-data/randjsons/"), "(?=.*Table)(?=.*wft)(?=.*json)".r)
+      DataLocation.recursiveListFiles(new File(s"$baseDir/tablejsons/"), "(?=.*Table)(?=.*wft)(?=.*json)".r)
         .foreach(x => deleteFile(x.getAbsolutePath))
 
-      DataLocation.recursiveListFiles(new File("/home/sagnik/data/nlp-table-data/randjsons/"), "(?=.*Table)(?=.*json)".r)
+      DataLocation.recursiveListFiles(new File(s"$baseDir/tablejsons/"), "(?=.*Table)(?=.*json)".r)
         .filterNot(x => blackList.exists(y => x.getAbsolutePath.contains(y)))
-        .foreach(x => { println(x.getAbsolutePath); RowHeaderPathTest(x.getAbsolutePath) })
+        .foreach(x => {
+          val jsonLoc = x.getAbsolutePath
+          println(jsonLoc)
+          val pdBase =  jsonLoc.split("/").last.split("-Table").head
+          val pdLoc = s"$basePDFDir/$pdBase.pdf"
+          RowHeaderPathTest(x.getAbsolutePath,pdLoc)
+        }
+        )
     }
   }
 }

@@ -12,6 +12,17 @@ case class TextGeneric(content: String, bb: Rectangle, rotation: Int)
 
 case class AllenAIWord(Rotation: Int, Text: String, TextBB: Seq[Float])
 
+case class AllenAITableParse(
+                         Caption: String,
+                         CaptionBB: Seq[Float],
+                         Page: Int,
+                         ImageBB: Seq[Float],
+                         ImageText: Option[Seq[AllenAIWord]],
+                         Mention: Option[String],
+                         DPI: Int,
+                         Number: String
+                       )
+
 case class AllenAITable(
                          Caption: String,
                          CaptionBB: Box,

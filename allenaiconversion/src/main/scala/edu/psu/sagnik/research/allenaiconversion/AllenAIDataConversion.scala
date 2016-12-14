@@ -35,7 +35,21 @@ object AllenAIDataConversion extends Logging {
   import org.json4s.jackson.JsonMethods._
 
   implicit val formats = org.json4s.DefaultFormats
-  def jsonToCaseClasses(jsonStr: String): AllenAITable = parse(jsonStr).extract[AllenAITable] //for test
+  def jsonToCaseClasses(jsonStr: String): AllenAITable = {
+    val a = parse(jsonStr).extract[AllenAITableParse]
+    AllenAITable(
+      Caption=a.Caption,
+      CaptionBB = Box(a.CaptionBB.head,a.CaptionBB(1),a.CaptionBB(2),a.CaptionBB(3)),
+      Page = a.Page-1,
+      ImageBB = Box(a.ImageBB.head,a.ImageBB(1),a.ImageBB(2),a.ImageBB(3)),
+      ImageText = a.ImageText,
+      Mention = a.Mention,
+      DPI = a.DPI,
+      id = a.Number
+    )
+  }
+
+  //for test
 
   lazy val tableFromPDFFigures2= (document: FigureExtractor.DocumentWithRasterizedFigures) => {
     document.figures.map(_.figure).filter(_.figType == FigureType.Table).map(t =>
@@ -227,16 +241,15 @@ object AllenAIDataConversion extends Logging {
     }
     pdDoc.close()
     simpleDocument match {
-      case Some(doc) => allenAITableToMyTable(aTable, Some(doc.pages(aTable.Page)))
+      case Some(doc) => {println(aTable.Page); allenAITableToMyTable(aTable, Some(doc.pages(aTable.Page)))}
       case _ => None
     }
   }
 
   def allenAITableToMyTable(aTable: AllenAITable, simplePage: Option[PDPageSimple]): Option[IntermediateTable] = aTable.ImageText match {
     case Some(wordsOrg) =>
-
       val cvRatio = aTable.DPI / 72f
-      val tableBB = allenAIBoxtoSeq(aTable.ImageBB)
+      val tableBB = allenAIBoxtoSeq(aTable.ImageBB).map(_/cvRatio)
       val words = wordsOrg.map(x => x.copy(TextBB = x.TextBB.map(_ / cvRatio)))
       val (pageHeight, pageWidth) =
         getPageHeightWidth(simplePage, aTable.Page) match { case Some((h, w)) => (h, w); case _ => (842f, 595f) } //defaulting to A4
@@ -264,7 +277,6 @@ object AllenAIDataConversion extends Logging {
         dpi = aTable.DPI,
         id = aTable.id
       )
-      //println(imTable.pdLines)
       if (imTable.textSegments.nonEmpty) Some(imTable)
       else None
 
@@ -274,8 +286,8 @@ object AllenAIDataConversion extends Logging {
   def allenAIFigureToMyFigure(aFigure: AllenAIFigure, simplePage: Option[PDPageSimple]): Option[CiteSeerXFigure] = {
 
     val cvRatio = aFigure.DPI / 72f
-    val figureBB = allenAIBoxtoSeq(aFigure.ImageBB)
-    val words = aFigure.ImageText.getOrElse(Seq.empty[AllenAIWord])
+    val figureBB = allenAIBoxtoSeq(aFigure.ImageBB).map(_/cvRatio)
+    val words = aFigure.ImageText.getOrElse(Seq.empty[AllenAIWord]).map(x => x.copy(TextBB = x.TextBB.map(_ / cvRatio)))
     val (pageHeight, pageWidth) = getPageHeightWidth(simplePage, aFigure.Page) match {
       case Some((h, w)) => (h, w);
       case _ => (842f, 595f)
@@ -286,7 +298,7 @@ object AllenAIDataConversion extends Logging {
           A(
             w.Text,
             Rectangle(
-              w.TextBB.head - figureBB.head + 2, //shortening the table
+              w.TextBB.head - figureBB.head + 2, //shortening the figure
               w.TextBB(1) - figureBB(1) + 2,
               w.TextBB(2) - figureBB.head - 2,
               w.TextBB(3) - figureBB(1) - 2

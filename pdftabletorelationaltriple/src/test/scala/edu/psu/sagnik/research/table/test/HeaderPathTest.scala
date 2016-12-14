@@ -23,14 +23,19 @@ class HeaderPathTest extends FunSpec {
           val interimtable = CombineWords.wordMergedTable(propertable)
           val table = CellRenaming.produceRowColNumbers(interimtable)
           //table.cells.foreach{x=>println(x.tg.content,x.startRow,x.startCol)}
-
+          val jsonLoc =
           if (table.cells.length != interimtable.textSegments.length)
-            println(s"high error probability: ${table.cells.length}, ${interimtable.textSegments.length}")
+            //println(s"high error probability: ${table.cells.length}, ${interimtable.textSegments.length}")
+          DataLocation.jsonLoc.substring(0, DataLocation.jsonLoc.length - 5) + "-wft-err.json"
+          else
+          DataLocation.jsonLoc.substring(0, DataLocation.jsonLoc.length - 5) + "-wft.json"
+
           TabletoWFT.headerPathstoDataCells(table) match {
             case Some(wft) => {
               /*scala.tools.nsc.io.File(DataLocation.jsonLoc.split(".json")(0)+"-wft.json")
                 .writeAll(JSONFormatter.wftToJsonString(wft))*/
 
+/*
               println("\n-----------------\ncaption\n-----------------\n")
               println(wft.caption)
               println("\n-----------------\nmention\n-----------------\n")
@@ -45,7 +50,8 @@ class HeaderPathTest extends FunSpec {
               wft.dcs.foreach(x => println(s"${x.tg.content} rowpath: ${x.rowpath.map(a => a.tg.content)}" +
                 s"colpath: ${x.colpath.map(a => a.tg.content)}"))
               println(DataLocation.jsonLoc.substring(0, DataLocation.jsonLoc.length - 5) + "-wft.json")
-              scala.tools.nsc.io.File(DataLocation.jsonLoc.substring(0, DataLocation.jsonLoc.length - 5) + "-wft.json")
+*/
+              scala.tools.nsc.io.File(jsonLoc)
                 .writeAll(JSONFormatter.wftToJsonString(wft))
             }
             case None => println("Could not convert given table to a well formed table")

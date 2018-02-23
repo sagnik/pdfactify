@@ -11,7 +11,7 @@ object JSONFormatter {
 
   def precReduce(d: Float): Double = BigDecimal.decimal(d).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble
 
-  def precReduce(r: Rectangle): List[Double] = List(precReduce(r.x1), precReduce(r.y1), precReduce(r.x2), precReduce(r.x1))
+  def precReduce(r: Rectangle): List[Double] = List(precReduce(r.x1), precReduce(r.y1), precReduce(r.x2), precReduce(r.y2))
 
   def wftToJsonString(wft: WFT): String = {
     val jsoncontent =
